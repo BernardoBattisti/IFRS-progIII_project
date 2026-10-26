@@ -1,0 +1,7 @@
+# Mantém finais de linha LF no repositório (evita quebrar scripts/containers no Windows)
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.jar binary
+*.ico binary
+*.png binary

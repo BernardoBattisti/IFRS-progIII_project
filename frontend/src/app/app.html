@@ -1,0 +1,12 @@
+<main>
+  <h1>IFRS - Programação III</h1>
+
+  @if (health(); as h) {
+    <p>Backend: <strong>{{ h.status }}</strong></p>
+    <p>Banco de dados: <strong>{{ h.database }}</strong></p>
+  } @else {
+    <p>Verificando backend...</p>
+  }
+</main>
+
+<router-outlet />
