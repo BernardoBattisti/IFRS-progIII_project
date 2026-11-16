@@ -118,6 +118,21 @@ Erros:
 `campos` só aparece em erro de validação (400). Códigos: 400 validação, 401 não autenticado,
 403 sem permissão, 404 não encontrado, 409 conflito, 422 regra de negócio.
 
+Detalhes fixados na implementação:
+
+- Criações (`POST`) respondem 200 com o objeto criado.
+- 409 só para matrícula duplicada, "já é membro" e turma vinculada a votação; demais violações de
+  estado ou regra → 422.
+- Docente pedindo turma ou votação de outro docente → 404. Aluno pedindo rascunho → 404; aluno não
+  elegível → 403.
+- Requisições que alteram estado vindas de outra origem (`Origin` diferente de `APP_BASE_URL` ou
+  `Sec-Fetch-Site` diferente de `same-origin`/`none`) → 403. O frontend sempre chama `/api/...` relativo.
+- Limites: até 50 opções, 50 turmas e 50 itens por envio de votos; `quantidade` nunca maior que
+  `votosPorAluno`.
+- Login Google recusado redireciona para `/?erroLogin=<codigo>`: `dominio_nao_permitido`,
+  `email_nao_verificado`, `conta_divergente`, `falha_google`.
+- `imagemUrl` só aceita o valor devolvido por `POST /uploads`.
+
 ### 5.1 Autenticação
 
 | Método | Rota | Acesso | Descrição |
