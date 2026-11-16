@@ -1,0 +1,53 @@
+server:
+  port: ${PORT:8080}
+  # Atrás do proxy do Next.js: respeita X-Forwarded-* quando enviados.
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      # A sessão HTTP só é usada durante o handshake OAuth (guarda o "state"); a API é stateless.
+      timeout: 10m
+      cookie:
+        same-site: lax
+        http-only: true
+
+spring:
+  application:
+    name: votacoes
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${POSTGRES_DB:votacoes}}
+    username: ${POSTGRES_USER:votacoes}
+    password: ${POSTGRES_PASSWORD:votacoes}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        default_batch_fetch_size: 50
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+
+app:
+  base-url: ${APP_BASE_URL:http://localhost:3000}
+  allowed-domains: ${APP_ALLOWED_DOMAINS:}
+  admin-emails: ${APP_ADMIN_EMAILS:}
+  jwt-secret: ${APP_JWT_SECRET:}
+  jwt-validade: 12h
+  upload-dir: ${APP_UPLOAD_DIR:./uploads}
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+
+logging:
+  level:
+    root: INFO
