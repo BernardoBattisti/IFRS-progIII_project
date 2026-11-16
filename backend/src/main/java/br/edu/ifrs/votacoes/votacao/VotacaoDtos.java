@@ -35,8 +35,9 @@ public final class VotacaoDtos {
             @NotNull(message = "obrigatório") Boolean permiteRepetirOpcao,
             @NotNull(message = "obrigatório") Boolean anonima,
             @NotNull(message = "obrigatório") VisibilidadeResultado visibilidadeResultado,
-            List<Long> turmaIds,
-            List<@Valid OpcaoInput> opcoes) {
+            @Size(max = 50, message = "no máximo 50 turmas") List<@NotNull(message = "não pode ser nulo") Long> turmaIds,
+            @Size(max = 50, message = "no máximo 50 opções")
+            List<@NotNull(message = "não pode ser nulo") @Valid OpcaoInput> opcoes) {
     }
 
     public record ProrrogarRequest(@NotNull(message = "obrigatório") Instant fim) {
@@ -47,7 +48,9 @@ public final class VotacaoDtos {
             @NotNull(message = "obrigatório") @Min(value = 1, message = "deve ser no mínimo 1") Integer quantidade) {
     }
 
-    public record VotarRequest(@NotEmpty(message = "informe ao menos um voto") List<@Valid @NotNull VotoItem> votos) {
+    public record VotarRequest(
+            @NotEmpty(message = "informe ao menos um voto") @Size(max = 50, message = "no máximo 50 itens por envio")
+            List<@NotNull(message = "não pode ser nulo") @Valid VotoItem> votos) {
     }
 
     public record DocenteResumo(Long id, String nome) {

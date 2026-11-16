@@ -20,7 +20,7 @@ import br.edu.ifrs.votacoes.suporte.BancoEmbutido;
 import br.edu.ifrs.votacoes.suporte.TesteIntegracao;
 
 /** Com GOOGLE_CLIENT_ID preenchido, o início do OAuth fica sob /api e o redirect-uri usa APP_BASE_URL. */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 class GoogleHabilitadoTest {
 
@@ -38,6 +38,23 @@ class GoogleHabilitadoTest {
 
     @Autowired
     MockMvc mvc;
+
+    @org.springframework.boot.test.web.server.LocalServerPort
+    int porta;
+
+    /** Item 9 da revisão: o JSESSIONID do handshake OAuth é Secure (base https), HttpOnly e SameSite=Lax. */
+    @Test
+    void cookieDaSessaoDoHandshakeEhSeguro() throws Exception {
+        var cliente = java.net.http.HttpClient.newBuilder()
+                .followRedirects(java.net.http.HttpClient.Redirect.NEVER).build();
+        var resp = cliente.send(java.net.http.HttpRequest.newBuilder(
+                java.net.URI.create("http://localhost:" + porta + "/api/oauth2/authorization/google")).build(),
+                java.net.http.HttpResponse.BodyHandlers.discarding());
+        String setCookie = resp.headers().allValues("Set-Cookie").stream()
+                .filter(c -> c.startsWith("JSESSIONID=")).findFirst().orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(setCookie)
+                .contains("Secure").contains("HttpOnly").contains("SameSite=Lax");
+    }
 
     @Test
     void configInformaGoogleHabilitado() throws Exception {

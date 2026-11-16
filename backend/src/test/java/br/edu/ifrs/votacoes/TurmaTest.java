@@ -95,10 +95,10 @@ class TurmaTest extends TesteIntegracao {
         Sessao d1 = docente("Prof Um", "D1");
         Sessao d2 = docente("Prof Dois", "D2");
         long t = criarTurma(d1, "Turma A");
-        executar(get("/api/turmas/" + t + "/alunos"), d2).andExpect(status().isForbidden());
-        enviar(put("/api/turmas/" + t), d2, Map.of("nome", "Hack")).andExpect(status().isForbidden());
-        executar(delete("/api/turmas/" + t), d2).andExpect(status().isForbidden());
-        executar(post("/api/turmas/" + t + "/codigo"), d2).andExpect(status().isForbidden());
+        executar(get("/api/turmas/" + t + "/alunos"), d2).andExpect(status().isNotFound());
+        enviar(put("/api/turmas/" + t), d2, Map.of("nome", "Hack")).andExpect(status().isNotFound());
+        executar(delete("/api/turmas/" + t), d2).andExpect(status().isNotFound());
+        executar(post("/api/turmas/" + t + "/codigo"), d2).andExpect(status().isNotFound());
         executar(get("/api/turmas"), d2).andExpect(jsonPath("$", hasSize(0)));
         executar(get("/api/turmas/999/alunos"), d1).andExpect(status().isNotFound());
     }

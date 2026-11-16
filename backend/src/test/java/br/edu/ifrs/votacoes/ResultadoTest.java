@@ -83,7 +83,7 @@ class ResultadoTest extends TesteIntegracao {
         Sessao fora = aluno("Fora", "A1");
         long id = votacaoAberta(d, votacaoInput(1, false, false, "SEMPRE", List.of(t), 2)).get("id").asLong();
         executar(get("/api/votacoes/" + id + "/resultados"), fora).andExpect(status().isForbidden());
-        executar(get("/api/votacoes/" + id + "/resultados"), d2).andExpect(status().isForbidden());
+        executar(get("/api/votacoes/" + id + "/resultados"), d2).andExpect(status().isNotFound());
     }
 
     @Test

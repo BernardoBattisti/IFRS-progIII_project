@@ -43,9 +43,14 @@ public class VotoService {
     }
 
     /**
-     * Registra um envio de votos. Tudo numa transação, com lock pessimista na linha de participação
-     * (aluno, votação): envios concorrentes do mesmo aluno são serializados e nunca ultrapassam N.
-     * O envio é aceito ou rejeitado por inteiro.
+     * Registra um envio de votos, aceito ou rejeitado por inteiro. Locks, nesta ordem:
+     * <ol>
+     * <li>linha da votação em FOR SHARE: encerrar/prorrogar/despublicar (FOR UPDATE) não podem mudar
+     * a janela enquanto o voto está em andamento, e um voto que chega depois enxerga o novo fim;</li>
+     * <li>linha de participação (aluno, votação) em FOR UPDATE: envios concorrentes do mesmo aluno
+     * são serializados e nunca ultrapassam N.</li>
+     * </ol>
+     * A janela é validada depois dos locks. As somas usam long (sem overflow).
      */
     @Transactional
     public VotacaoDto votar(Long alunoId, Long votacaoId, VotarRequest req) {
@@ -53,14 +58,18 @@ public class VotoService {
         if (!aluno.isAlunoAtivo()) {
             throw ApiException.semPermissao("Somente alunos podem votar.");
         }
-        Votacao v = acesso.buscar(votacaoId);
+        Votacao v = acesso.buscarParaVotar(votacaoId);
         acesso.exigirLeitura(v, aluno);
         exigirAberta(v, clock.instant());
 
         // Agrupa por opção (o mesmo opcaoId pode aparecer mais de uma vez no envio).
-        Map<Long, Integer> pedido = new LinkedHashMap<>();
+        int n = v.getVotosPorAluno();
+        Map<Long, Long> pedido = new LinkedHashMap<>();
         for (VotoItem item : req.votos()) {
-            pedido.merge(item.opcaoId(), item.quantidade(), Integer::sum);
+            if (item.quantidade() > n) {
+                throw ApiException.regraNegocio("Cada aluno tem no máximo " + n + (n == 1 ? " voto." : " votos."));
+            }
+            pedido.merge(item.opcaoId(), (long) item.quantidade(), Math::addExact);
         }
         Set<Long> opcoesValidas = v.getOpcoes().stream().map(Opcao::getId).collect(Collectors.toSet());
         for (Long opcaoId : pedido.keySet()) {
@@ -68,54 +77,62 @@ public class VotoService {
                 throw ApiException.regraNegocio("A opção " + opcaoId + " não pertence a esta votação.");
             }
         }
-        int total = pedido.values().stream().mapToInt(Integer::intValue).sum();
+        long total = pedido.values().stream().reduce(0L, Math::addExact);
 
         participacoes.garantir(v.getId(), aluno.getId());
         Participacao p = participacoes.travar(new Participacao.Id(v.getId(), aluno.getId()))
                 .orElseThrow(() -> new IllegalStateException("Participação não encontrada após inserção"));
 
         Instant agora = clock.instant();
-        exigirAberta(v, agora); // o lock pode ter esperado; revalida a janela
+        exigirAberta(v, agora); // revalida a janela já com os locks obtidos
 
-        int restantes = v.getVotosPorAluno() - p.getVotosUsados();
+        // Primeiro tudo o que não depende de votos anteriores em opções específicas...
+        int restantes = n - p.getVotosUsados();
         if (restantes <= 0) {
-            throw ApiException.regraNegocio("Você já usou todos os seus " + v.getVotosPorAluno() + " votos.");
+            throw ApiException.regraNegocio("Você já usou todos os seus " + n + " votos.");
         }
         if (total > restantes) {
             throw ApiException.regraNegocio(restantes == 1
                     ? "Você só tem 1 voto restante."
                     : "Você só tem " + restantes + " votos restantes.");
         }
+        if (!v.isPermiteRepetirOpcao() && pedido.values().stream().anyMatch(q -> q > 1)) {
+            throw ApiException.regraNegocio(MSG_UM_POR_OPCAO);
+        }
 
+        // ...e só então a checagem de "já votou nesta opção". Em votação anônima a mensagem é
+        // genérica, sem o título da opção.
         if (!v.isPermiteRepetirOpcao()) {
-            for (var e : pedido.entrySet()) {
-                if (e.getValue() > 1) {
-                    throw ApiException.regraNegocio("Esta votação permite no máximo 1 voto por opção.");
-                }
-                boolean jaVotou = v.isAnonima()
-                        ? guardas.existsById(hmac.calcular(v.getId(), aluno.getId(), e.getKey()))
-                        : votos.existsByVotacaoIdAndAlunoIdAndOpcaoId(v.getId(), aluno.getId(), e.getKey());
-                if (jaVotou) {
-                    throw ApiException.regraNegocio(
-                            "Você já votou na opção \"" + tituloDa(v, e.getKey()) + "\" e esta votação permite no máximo 1 voto por opção.");
+            for (Long opcaoId : pedido.keySet()) {
+                if (v.isAnonima()) {
+                    if (guardas.existsById(hmac.calcular(v.getId(), aluno.getId(), opcaoId))) {
+                        throw ApiException.regraNegocio("Envio recusado: esta votação permite no máximo "
+                                + "1 voto por opção, considerando também os seus votos anteriores.");
+                    }
+                } else if (votos.existsByVotacaoIdAndAlunoIdAndOpcaoId(v.getId(), aluno.getId(), opcaoId)) {
+                    throw ApiException.regraNegocio("Você já votou na opção \"" + tituloDa(v, opcaoId)
+                            + "\" e esta votação permite no máximo 1 voto por opção.");
                 }
             }
         }
 
         for (var e : pedido.entrySet()) {
+            int quantidade = Math.toIntExact(e.getValue());
             if (v.isAnonima()) {
-                votos.save(Voto.anonimo(v.getId(), e.getKey(), e.getValue()));
+                votos.save(Voto.anonimo(v.getId(), e.getKey(), quantidade));
                 if (!v.isPermiteRepetirOpcao()) {
                     guardas.save(new GuardaAnonima(hmac.calcular(v.getId(), aluno.getId(), e.getKey()), v.getId()));
                 }
             } else {
-                votos.save(Voto.identificado(v.getId(), e.getKey(), aluno.getId(), e.getValue(), agora));
+                votos.save(Voto.identificado(v.getId(), e.getKey(), aluno.getId(), quantidade, agora));
             }
         }
-        p.somarVotos(total);
+        p.somarVotos(Math.toIntExact(total));
         participacoes.flush();
         return votacaoService.dto(v, aluno);
     }
+
+    static final String MSG_UM_POR_OPCAO = "Esta votação permite no máximo 1 voto por opção.";
 
     private static void exigirAberta(Votacao v, Instant agora) {
         EstadoVotacao estado = v.estado(agora);

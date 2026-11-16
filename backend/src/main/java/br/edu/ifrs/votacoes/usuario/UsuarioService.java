@@ -42,13 +42,18 @@ public class UsuarioService {
 
         Usuario usuario = (googleSub != null ? repo.findByGoogleSub(googleSub) : java.util.Optional.<Usuario>empty())
                 .or(() -> repo.findByEmail(email))
-                .orElseGet(() -> new Usuario(email, nomeOuEmail(nome, email), clock.instant()));
+                .orElseGet(() -> new Usuario(email, limitar(nomeOuEmail(nome, email), TAM_NOME), clock.instant()));
 
+        // Conta já vinculada a outra identidade Google com o mesmo e-mail: não assume a conta.
+        if (googleSub != null && usuario.getGoogleSub() != null && !googleSub.equals(usuario.getGoogleSub())) {
+            throw new LoginNegadoException("conta_divergente",
+                    "Este e-mail já está vinculado a outra conta Google.");
+        }
         if (nome != null && !nome.isBlank()) {
-            usuario.setNome(nome.trim());
+            usuario.setNome(limitar(nome.trim(), TAM_NOME));
         }
         if (fotoUrl != null && !fotoUrl.isBlank()) {
-            usuario.setFotoUrl(fotoUrl);
+            usuario.setFotoUrl(fotoUrl.length() <= TAM_FOTO ? fotoUrl : null);
         }
         if (googleSub != null && usuario.getGoogleSub() == null) {
             usuario.setGoogleSub(googleSub);
@@ -58,6 +63,13 @@ public class UsuarioService {
             usuario.setStatus(StatusConta.ATIVO);
         }
         return repo.save(usuario);
+    }
+
+    private static final int TAM_NOME = 200;
+    private static final int TAM_FOTO = 1000;
+
+    private static String limitar(String s, int max) {
+        return s.length() <= max ? s : s.substring(0, max);
     }
 
     private static String nomeOuEmail(String nome, String email) {

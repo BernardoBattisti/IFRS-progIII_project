@@ -164,7 +164,7 @@ public class VotacaoService {
     public VotacaoDto despublicar(Long docenteId, Long votacaoId) {
         Usuario u = usuarios.buscar(docenteId);
         Votacao v = doDonoNoEstado(u, votacaoId, EstadoVotacao.AGENDADA,
-                "Somente votações agendadas (ainda não abertas) podem ser despublicadas.");
+                "Somente votações agendadas (ainda não abertas) podem ser despublicadas.", true);
         v.setPublicada(false);
         return dto(v, u);
     }
@@ -173,7 +173,7 @@ public class VotacaoService {
     public VotacaoDto encerrar(Long docenteId, Long votacaoId) {
         Usuario u = usuarios.buscar(docenteId);
         Votacao v = doDonoNoEstado(u, votacaoId, EstadoVotacao.ABERTA,
-                "Somente votações abertas podem ser encerradas antecipadamente.");
+                "Somente votações abertas podem ser encerradas antecipadamente.", true);
         v.setFim(clock.instant());
         votacoes.flush();
         return dto(v, u);
@@ -183,7 +183,7 @@ public class VotacaoService {
     public VotacaoDto prorrogar(Long docenteId, Long votacaoId, Instant novoFim) {
         Usuario u = usuarios.buscar(docenteId);
         Votacao v = doDonoNoEstado(u, votacaoId, EstadoVotacao.ABERTA,
-                "Somente votações abertas podem ser prorrogadas.");
+                "Somente votações abertas podem ser prorrogadas.", true);
         if (!novoFim.isAfter(v.getFim())) {
             throw ApiException.regraNegocio("O novo fim deve ser posterior ao fim atual.");
         }
@@ -192,7 +192,13 @@ public class VotacaoService {
     }
 
     private Votacao doDonoNoEstado(Usuario u, Long votacaoId, EstadoVotacao exigido, String mensagem) {
-        Votacao v = acesso.buscar(votacaoId);
+        return doDonoNoEstado(u, votacaoId, exigido, mensagem, false);
+    }
+
+    /** Com {@code travar}, a linha da votação fica em FOR UPDATE até o commit (disputa com votar). */
+    private Votacao doDonoNoEstado(Usuario u, Long votacaoId, EstadoVotacao exigido, String mensagem,
+            boolean travar) {
+        Votacao v = travar ? acesso.buscarParaAlterar(votacaoId) : acesso.buscar(votacaoId);
         acesso.exigirDono(v, u);
         if (v.estado(clock.instant()) != exigido) {
             throw ApiException.regraNegocio(mensagem);

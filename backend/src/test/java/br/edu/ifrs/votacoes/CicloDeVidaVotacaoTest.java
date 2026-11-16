@@ -237,8 +237,8 @@ class CicloDeVidaVotacaoTest extends TesteIntegracao {
         Sessao d2 = docente("Prof Dois", "D2");
         Sessao a = aluno("Aluno", "A1");
         long id = criarVotacao(d1, votacaoInput(1, false, false, "SEMPRE", List.of(), 2)).get("id").asLong();
-        executar(get("/api/votacoes/" + id), d2).andExpect(status().isForbidden());
-        executar(post("/api/votacoes/" + id + "/publicar"), d2).andExpect(status().isForbidden());
+        executar(get("/api/votacoes/" + id), d2).andExpect(status().isNotFound());
+        executar(post("/api/votacoes/" + id + "/publicar"), d2).andExpect(status().isNotFound());
         executar(post("/api/votacoes/" + id + "/publicar"), a).andExpect(status().isForbidden());
         enviar(post("/api/votacoes"), a, votacaoInput(1, false, false, "SEMPRE", List.of(), 2))
                 .andExpect(status().isForbidden());

@@ -134,7 +134,8 @@ public class TurmaService {
         exigirDocente(docenteId);
         Turma t = turmas.findById(turmaId).orElseThrow(() -> ApiException.naoEncontrado("Turma não encontrada."));
         if (!t.pertenceA(docenteId)) {
-            throw ApiException.semPermissao("Esta turma pertence a outro docente.");
+            // Não revela a existência de turmas de outros docentes.
+            throw ApiException.naoEncontrado("Turma não encontrada.");
         }
         return t;
     }

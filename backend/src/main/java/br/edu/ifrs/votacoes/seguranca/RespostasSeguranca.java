@@ -38,6 +38,11 @@ public class RespostasSeguranca implements AuthenticationEntryPoint, AccessDenie
                 "Você não tem permissão para esta ação (verifique seu papel e se sua conta está ativa).", null));
     }
 
+    public void origemRecusada(HttpServletResponse resp) throws IOException {
+        escrever(resp, new ErroResposta(403, "SEM_PERMISSAO",
+                "Requisição recusada: origem não permitida.", null));
+    }
+
     private void escrever(HttpServletResponse resp, ErroResposta erro) throws IOException {
         resp.setStatus(erro.status());
         resp.setContentType(MediaType.APPLICATION_JSON_VALUE);

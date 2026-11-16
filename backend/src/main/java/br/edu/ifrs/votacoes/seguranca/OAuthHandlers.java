@@ -47,22 +47,26 @@ public class OAuthHandlers implements AuthenticationSuccessHandler, Authenticati
     public void onAuthenticationSuccess(HttpServletRequest req, HttpServletResponse resp, Authentication auth)
             throws IOException {
         encerrarSessaoHttp(req);
-        OAuth2User principal = (OAuth2User) auth.getPrincipal();
-        String email = principal.getAttribute("email");
-        Boolean verificado = principal.getAttribute("email_verified");
-        if (verificado != null && !verificado) {
-            redirecionarErro(resp, "email_nao_verificado");
-            return;
-        }
-        String nome = principal.getAttribute("name");
-        String foto = principal.getAttribute("picture");
-        String sub = principal instanceof OidcUser oidc ? oidc.getSubject() : principal.getName();
         try {
+            OAuth2User principal = (OAuth2User) auth.getPrincipal();
+            String email = principal.getAttribute("email");
+            // Só aceita e-mail explicitamente verificado pelo Google (ausente = recusado).
+            if (!Boolean.TRUE.equals(principal.getAttribute("email_verified"))) {
+                redirecionarErro(resp, "email_nao_verificado");
+                return;
+            }
+            String nome = principal.getAttribute("name");
+            String foto = principal.getAttribute("picture");
+            String sub = principal instanceof OidcUser oidc ? oidc.getSubject() : principal.getName();
             Usuario u = usuarios.login(email, nome, foto, sub);
             cookie.abrir(resp, u.getId());
             resp.sendRedirect(props.baseUrl() + "/");
         } catch (LoginNegadoException e) {
             redirecionarErro(resp, e.getCodigo());
+        } catch (RuntimeException e) {
+            // Ex.: corrida no primeiro login (e-mail único), dado fora do tamanho das colunas.
+            log.warn("Erro inesperado ao concluir login Google", e);
+            redirecionarErro(resp, "falha_google");
         }
     }
 

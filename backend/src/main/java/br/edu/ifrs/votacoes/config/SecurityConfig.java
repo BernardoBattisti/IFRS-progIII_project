@@ -15,6 +15,7 @@ import org.springframework.security.web.context.RequestAttributeSecurityContextR
 
 import br.edu.ifrs.votacoes.seguranca.CookieSessao;
 import br.edu.ifrs.votacoes.seguranca.FiltroCookieJwt;
+import br.edu.ifrs.votacoes.seguranca.FiltroOrigem;
 import br.edu.ifrs.votacoes.seguranca.JwtService;
 import br.edu.ifrs.votacoes.seguranca.OAuthHandlers;
 import br.edu.ifrs.votacoes.seguranca.RespostasSeguranca;
@@ -26,13 +27,16 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, CookieSessao cookie, JwtService jwt,
-            UsuarioRepository usuarios, RespostasSeguranca respostas, OAuthHandlers oauthHandlers,
+            UsuarioRepository usuarios, RespostasSeguranca respostas, AppProperties props, OAuthHandlers oauthHandlers,
             ObjectProvider<ClientRegistrationRepository> registrosGoogle) throws Exception {
 
         http
-            // CSRF desabilitado conscientemente: o cookie de sessão é SameSite=Lax (o navegador não o
-            // envia em POST/PUT/DELETE vindos de outro site), a API só é acessada na mesma origem via
-            // proxy do Next.js, não há CORS liberado e nenhuma rota GET altera estado.
+            // CSRF: sem token sincronizador, por decisão. Camadas usadas no lugar dele:
+            //  - cookie de sessão SameSite=Lax: navegador não o envia em POST/PUT/DELETE de outro SITE;
+            //  - FiltroOrigem: recusa métodos não seguros cujo Sec-Fetch-Site não seja same-origin/none
+            //    ou cujo Origin difira de APP_BASE_URL — cobre ataques de outra origem do MESMO site
+            //    (ex.: subdomínio), inclusive POSTs sem corpo e multipart, que o SameSite não barra;
+            //  - API só na mesma origem via proxy do Next.js, sem CORS, e nenhum GET altera estado.
             .csrf(AbstractHttpConfigurer::disable)
             .cors(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
@@ -45,6 +49,7 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .exceptionHandling(e -> e.authenticationEntryPoint(respostas).accessDeniedHandler(respostas))
             .addFilterBefore(new FiltroCookieJwt(cookie, jwt, usuarios), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new FiltroOrigem(props, respostas), FiltroCookieJwt.class)
             .authorizeHttpRequests(a -> a
                 .requestMatchers("/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/auth/config").permitAll()

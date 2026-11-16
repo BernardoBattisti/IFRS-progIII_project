@@ -25,11 +25,22 @@ public class AcessoVotacao {
         return votacoes.findById(id).orElseThrow(() -> ApiException.naoEncontrado("Votação não encontrada."));
     }
 
-    /** Docente dono, ou aluno elegível em votação publicada. Rascunho é invisível ao aluno (404). */
+    public Votacao buscarParaVotar(Long id) {
+        return votacoes.buscarParaVotar(id).orElseThrow(() -> ApiException.naoEncontrado("Votação não encontrada."));
+    }
+
+    public Votacao buscarParaAlterar(Long id) {
+        return votacoes.buscarParaAlterar(id).orElseThrow(() -> ApiException.naoEncontrado("Votação não encontrada."));
+    }
+
+    /**
+     * Docente dono, ou aluno elegível em votação publicada. Rascunho é invisível ao aluno (404) e
+     * votação de outro docente responde 404 (não revela que existe). Aluno inelegível: 403.
+     */
     public void exigirLeitura(Votacao v, Usuario u) {
         if (u.isDocenteAtivo()) {
             if (!v.pertenceA(u.getId())) {
-                throw ApiException.semPermissao("Esta votação pertence a outro docente.");
+                throw ApiException.naoEncontrado("Votação não encontrada.");
             }
             return;
         }
@@ -50,7 +61,7 @@ public class AcessoVotacao {
             throw ApiException.semPermissao("Somente o docente criador pode gerenciar esta votação.");
         }
         if (!v.pertenceA(u.getId())) {
-            throw ApiException.semPermissao("Esta votação pertence a outro docente.");
+            throw ApiException.naoEncontrado("Votação não encontrada.");
         }
     }
 
