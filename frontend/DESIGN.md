@@ -57,7 +57,7 @@ Alvos de toque: botões com altura mínima de 44px no celular (o tamanho `sm` ca
 ## Componentes (`src/components/ui`)
 
 `Button`/`LinkBotao` (primary, secondary, ghost, danger; md/sm) · `InputField`/`TextareaField`/`SelectField`
-(rótulo, ajuda, erro, “(obrigatório)”) · `Alert` (info, sucesso, aviso, erro — ícone + título) ·
+(rótulo, ajuda, erro, “(obrigatório)”) · `SenhaField` (botão Mostrar/Ocultar; com `minimo`, contador “faltam N” na ajuda) · `Alert` (info, sucesso, aviso, erro — ícone + título) ·
 `Badge`, `EstadoBadge`, `StatusBadge` · `Card` · `EmptyState` (o que é + por que está vazio + como começar) ·
 `Dialog`/`ConfirmDialog` (`<dialog>` nativo: foco preso, Esc fecha, foco volta ao gatilho) · `Spinner`/`Carregando` ·
 `PageHeader`.
@@ -71,12 +71,15 @@ Alvos de toque: botões com altura mínima de 44px no celular (o tamanho `sm` ca
 | `ABERTA` | Aberta | verde, com ponto |
 | `ENCERRADA` | Encerrada | escuro (`ink` com texto branco) |
 
-Status de conta: Ativo (verde), Aguardando aprovação (aviso), Rejeitado (erro), Cadastro incompleto (neutro).
+Status de conta: Ativo (verde), Aguardando aprovação (aviso), Rejeitado (erro).
 
 ## Padrões
 
 - **Resultados**: barras horizontais HTML/CSS; rótulo, percentual e contagem sempre em texto; barra `aria-hidden`.
 - **Ações irreversíveis** (enviar voto, encerrar, excluir, rejeitar, gerar novo código): diálogo com título em
   forma de pergunta específica, consequência descrita e botões rotulados com a ação (“Encerrar votação” / “Manter aberta”).
+- **Telas públicas** (login, criar conta, recuperar/criar nova senha): `TelaPublica` — marca centralizada, cartão
+  `max-w-md` com `h1` e link de troca de tela abaixo. Senhas: `autocomplete` `current-password` (login, senha atual)
+  ou `new-password` (cadastro, nova senha); e-mail com `autocomplete="email"`.
 - **Texto**: português do Brasil, verbos no imperativo nos botões, glossário fixo — votação, opção, voto, turma,
   código da turma, matrícula, docente, aluno, rascunho, publicar/despublicar, encerrar, prorrogar.

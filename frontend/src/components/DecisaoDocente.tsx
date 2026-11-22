@@ -30,6 +30,9 @@ export function DecisaoDocente({ u, aoDecidir }: { u: Usuario; aoDecidir: (u: Us
     }
   }
 
+  // O admin fixo nunca recebe ações; só docentes aguardando aprovação.
+  if (u.papel !== "DOCENTE" || u.status !== "PENDENTE_APROVACAO") return null;
+
   return (
     <div className="flex flex-wrap gap-2">
       <Button tamanho="sm" onClick={() => { setErro(null); setDialogo("aprovar"); }}>

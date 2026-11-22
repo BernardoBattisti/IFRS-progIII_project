@@ -13,23 +13,32 @@ services:
       timeout: 3s
       retries: 20
 
+  # Caixa de e-mail de teste: todo e-mail enviado pelo sistema aparece em http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.33.1
+    ports:
+      - "8025:8025"
+
   backend:
     build: ./backend
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-votacoes}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-votacoes}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
-      APP_ALLOWED_DOMAINS: ${APP_ALLOWED_DOMAINS:-}
-      APP_ADMIN_EMAILS: ${APP_ADMIN_EMAILS:-}
       APP_JWT_SECRET: ${APP_JWT_SECRET:?defina APP_JWT_SECRET no .env}
       APP_UPLOAD_DIR: /dados/uploads
+      MAIL_HOST: ${MAIL_HOST:-mailpit}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-false}
+      MAIL_FROM: ${MAIL_FROM:-nao-responda@votacoes.local}
     volumes:
       - uploads:/dados/uploads
 

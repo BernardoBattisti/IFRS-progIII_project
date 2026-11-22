@@ -21,6 +21,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <embedded-postgres.version>2.2.2</embedded-postgres.version>
         <embedded-postgres-binaries.version>16.16.0</embedded-postgres-binaries.version>
+        <nimbus-jose-jwt.version>9.37.4</nimbus-jose-jwt.version>
     </properties>
 
     <dependencyManagement>
@@ -47,7 +48,13 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <!-- JWT (HS256) do cookie de sessão (antes vinha junto do oauth2-client). -->
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>${nimbus-jose-jwt.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -162,8 +162,9 @@ class VotoTest extends TesteIntegracao {
         JsonNode v = votacaoAberta(d, votacaoInput(1, false, false, "SEMPRE", List.of(), 2));
         votar(a, v.get("id").asLong(), opcaoId(v, 1), 1).andExpect(status().isOk());
 
-        Sessao incompleto = login("incompleto@escola.edu.br", "Sem cadastro");
-        votar(incompleto, v.get("id").asLong(), opcaoId(v, 1), 1).andExpect(status().isForbidden());
+        // Conta autenticada mas não ATIVO (docente pendente) não vota.
+        Sessao pendente = docentePendente("Pendente", "P1");
+        votar(pendente, v.get("id").asLong(), opcaoId(v, 1), 1).andExpect(status().isForbidden());
     }
 
     @Test

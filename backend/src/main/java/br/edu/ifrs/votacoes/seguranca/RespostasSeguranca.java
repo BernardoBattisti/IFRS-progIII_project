@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import br.edu.ifrs.votacoes.dominio.DominioService;
 import br.edu.ifrs.votacoes.erro.ErroResposta;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,6 +29,11 @@ public class RespostasSeguranca implements AuthenticationEntryPoint, AccessDenie
     @Override
     public void commence(HttpServletRequest req, HttpServletResponse resp, AuthenticationException e)
             throws IOException {
+        if (req.getAttribute(FiltroCookieJwt.ATRIBUTO_DOMINIO_RECUSADO) instanceof String dominio) {
+            // Sessão válida, mas o domínio da conta saiu da lista de aceitos.
+            escrever(resp, new ErroResposta(403, "DOMINIO_NAO_ACEITO", DominioService.mensagemRecusa(dominio), null));
+            return;
+        }
         escrever(resp, new ErroResposta(401, "NAO_AUTENTICADO", "Você precisa entrar no sistema.", null));
     }
 
@@ -41,6 +47,11 @@ public class RespostasSeguranca implements AuthenticationEntryPoint, AccessDenie
     public void origemRecusada(HttpServletResponse resp) throws IOException {
         escrever(resp, new ErroResposta(403, "SEM_PERMISSAO",
                 "Requisição recusada: origem não permitida.", null));
+    }
+
+    public void muitasTentativas(HttpServletResponse resp, long segundos) throws IOException {
+        resp.setHeader("Retry-After", Long.toString(segundos));
+        escrever(resp, new ErroResposta(429, "MUITAS_TENTATIVAS", "Muitas tentativas. Aguarde um minuto.", null));
     }
 
     private void escrever(HttpServletResponse resp, ErroResposta erro) throws IOException {

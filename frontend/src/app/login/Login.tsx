@@ -1,163 +1,162 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { api, ApiError, mensagemDeErro } from "@/lib/api";
+import { api, ApiError, CHAVE_MSG_SESSAO, ehErroDominio, mensagemDeErro } from "@/lib/api";
 import { rotaInicial } from "@/lib/rotas";
-import type { AuthConfig, Usuario } from "@/lib/types";
-import { Marca } from "@/components/AppShell";
+import type { Usuario } from "@/lib/types";
+import { TelaPublica, classeLinkTexto } from "@/components/TelaPublica";
 import { Alert } from "@/components/ui/Alert";
-import { Button, classeBotao } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { InputField } from "@/components/ui/Field";
-import { Carregando } from "@/components/ui/Spinner";
+import { Button } from "@/components/ui/Button";
+import { InputField, SenhaField } from "@/components/ui/Field";
 
-const MENSAGENS_ERRO_LOGIN: Record<string, string> = {
-  dominio_nao_permitido:
-    "Esta conta Google não pertence a um domínio aceito pelo sistema. Entre com seu e-mail institucional.",
-  email_nao_verificado:
-    "O e-mail desta conta Google ainda não foi verificado. Verifique o e-mail no Google e tente de novo.",
-  conta_divergente:
-    "Já existe uma conta com este e-mail ligada a outro login Google. Entre com a mesma conta Google usada antes ou procure a coordenação.",
-  falha_google: "Não conseguimos concluir o login com o Google. Tente de novo em alguns instantes.",
-};
+const MSG_DOMINIO_PADRAO = "O domínio do seu e-mail deixou de ser aceito por este sistema.";
 
-function IconeGoogle() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-5" aria-hidden="true">
-      <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.5 14.6 2.5 12 2.5 6.8 2.5 2.6 6.7 2.6 12s4.2 9.5 9.4 9.5c5.4 0 9-3.8 9-9.2 0-.6-.1-1.1-.2-1.6H12z" />
-    </svg>
-  );
+type Falha = { titulo: string; texto: string; dica?: string };
+
+function falhaDoErro(e: unknown): Falha {
+  if (e instanceof ApiError) {
+    if (e.status === 401) return { titulo: "Não foi possível entrar", texto: e.message };
+    if (e.status === 403)
+      return {
+        titulo: "Acesso não permitido",
+        texto: e.message,
+        dica: ehErroDominio(e)
+          ? "Use o e-mail institucional ou procure a coordenação do sistema no seu campus."
+          : "Se você acha que isso é um engano, procure a coordenação do sistema no seu campus.",
+      };
+    if (e.status === 429) return { titulo: "Muitas tentativas seguidas", texto: e.message };
+  }
+  return { titulo: "Não foi possível entrar", texto: mensagemDeErro(e) };
+}
+
+const semAssinatura = () => () => undefined;
+
+/** Mensagem guardada quando a sessão foi encerrada (domínio removido). */
+function lerMensagemSessao(motivo: string | null): string | null {
+  if (motivo !== "dominio") return null;
+  try {
+    return window.sessionStorage.getItem(CHAVE_MSG_SESSAO) || MSG_DOMINIO_PADRAO;
+  } catch {
+    return MSG_DOMINIO_PADRAO;
+  }
 }
 
 export function Login() {
   const router = useRouter();
   const params = useSearchParams();
-  const [config, setConfig] = useState<AuthConfig | null>(null);
-  const [erroConfig, setErroConfig] = useState<string | null>(null);
+  const motivo = params.get("motivo");
+  // sessionStorage só existe no navegador: no servidor (e na hidratação) a mensagem é null.
+  const msgGuardada = useSyncExternalStore(
+    semAssinatura,
+    () => lerMensagemSessao(motivo),
+    () => null,
+  );
+  const [msgDominioMe, setMsgDominioMe] = useState<string | null>(null);
+  const sessaoEncerrada = msgDominioMe ?? msgGuardada;
   const [email, setEmail] = useState("");
-  const [nome, setNome] = useState("");
+  const [senha, setSenha] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
+  const [falha, setFalha] = useState<Falha | null>(null);
   const [campos, setCampos] = useState<Record<string, string>>({});
+  const refEmail = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Já autenticado? Vai direto para a área certa.
     api<Usuario>("/auth/me")
       .then((u) => router.replace(rotaInicial(u)))
-      .catch(() => undefined);
-    api<AuthConfig>("/auth/config")
-      .then(setConfig)
-      .catch((e) => setErroConfig(mensagemDeErro(e)));
+      .catch((e: unknown) => {
+        // Sessão ainda aberta, mas o domínio deixou de ser aceito.
+        if (ehErroDominio(e)) setMsgDominioMe(e.message);
+      });
   }, [router]);
 
-  async function entrarDev(e: FormEvent) {
+  async function entrar(e: FormEvent) {
     e.preventDefault();
-    setErro(null);
+    setFalha(null);
     const locais: Record<string, string> = {};
-    if (!email.trim()) locais.email = "Informe o e-mail.";
-    if (!nome.trim()) locais.nome = "Informe o nome.";
+    if (!email.trim()) locais.email = "Informe seu e-mail.";
+    if (!senha) locais.senha = "Informe sua senha.";
     setCampos(locais);
-    if (Object.keys(locais).length) return;
+    if (locais.email) return refEmail.current?.focus();
+    if (locais.senha) return document.getElementById("login-senha")?.focus();
     setEnviando(true);
     try {
-      const u = await api<Usuario>("/dev/login", { method: "POST", body: { email: email.trim(), nome: nome.trim() } });
+      const u = await api<Usuario>("/auth/login", { method: "POST", body: { email: email.trim(), senha } });
+      try {
+        window.sessionStorage.removeItem(CHAVE_MSG_SESSAO);
+      } catch {
+        // ignora
+      }
       router.replace(rotaInicial(u));
     } catch (err) {
-      setErro(mensagemDeErro(err));
+      setFalha(falhaDoErro(err));
       if (err instanceof ApiError && err.campos) setCampos(err.campos);
+      setSenha("");
       setEnviando(false);
     }
   }
 
-  // Login Google recusado: o backend redireciona para "/?erroLogin=<codigo>" e a raiz repassa para cá.
-  const erroOAuth = params.get("erroLogin");
-
   return (
-    <main id="conteudo" tabIndex={-1} className="flex flex-1 items-start justify-center px-4 py-10 sm:items-center">
-      <div className="w-full max-w-md space-y-6">
-        <div className="flex justify-center">
-          <Marca />
+    <TelaPublica
+      titulo="Entrar"
+      descricao="Use o e-mail e a senha da sua conta para votar ou gerenciar votações."
+      rodape={
+        <p>
+          Ainda não tem conta?{" "}
+          <Link href="/cadastro" className={classeLinkTexto}>
+            Criar conta
+          </Link>
+        </p>
+      }
+    >
+      {sessaoEncerrada && !falha && (
+        <Alert tom="aviso" titulo="Sua sessão foi encerrada" anunciar>
+          <p>{sessaoEncerrada}</p>
+          <p>Se precisar de acesso, procure a coordenação do sistema no seu campus.</p>
+        </Alert>
+      )}
+      <form onSubmit={entrar} className="space-y-4" noValidate>
+        <InputField
+          ref={refEmail}
+          rotulo="E-mail"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          erro={campos.email}
+          obrigatorio
+        />
+        <div className="space-y-1">
+          <SenhaField
+            id="login-senha"
+            rotulo="Senha"
+            autoComplete="current-password"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            erro={campos.senha}
+            obrigatorio
+          />
+          <p className="text-right text-sm">
+            <Link href="/esqueci-senha" className={classeLinkTexto}>
+              Esqueci minha senha
+            </Link>
+          </p>
         </div>
-        <Card className="space-y-6">
-          <div className="space-y-1 text-center">
-            <h1 className="text-2xl font-bold">Entrar</h1>
-            <p className="text-ink-muted">Use sua conta Google institucional para votar ou gerenciar votações.</p>
-          </div>
-
-          {erroOAuth && (
-            <Alert tom="erro" titulo="Não foi possível entrar" anunciar>
-              <p>{MENSAGENS_ERRO_LOGIN[erroOAuth] ?? MENSAGENS_ERRO_LOGIN.falha_google}</p>
-            </Alert>
-          )}
-
-          {!config && !erroConfig && <Carregando texto="Carregando opções de login…" />}
-          {erroConfig && (
-            <Alert tom="erro" titulo="Não foi possível carregar o login" anunciar>
-              <p>{erroConfig}</p>
-            </Alert>
-          )}
-
-          {config?.googleHabilitado && (
-            // Navegação completa (não client-side): o backend redireciona para o Google.
-            // eslint-disable-next-line @next/next/no-html-link-for-pages
-            <a href="/api/oauth2/authorization/google" className={classeBotao("secondary") + " w-full text-ink"}>
-              <IconeGoogle />
-              Entrar com Google
-            </a>
-          )}
-
-          {config && !config.googleHabilitado && !config.devLogin && (
-            <Alert tom="aviso" titulo="Login indisponível">
-              <p>O login com Google ainda não foi configurado neste servidor. Avise a coordenação do sistema.</p>
-            </Alert>
-          )}
-
-          {config?.devLogin && (
-            <section
-              aria-labelledby="titulo-dev"
-              className="space-y-4 rounded-[var(--radius-control)] border-2 border-dashed border-warning-200 bg-warning-50 p-4"
-            >
-              <div className="space-y-1">
-                <h2 id="titulo-dev" className="flex flex-wrap items-center gap-2 font-bold text-warning-700">
-                  <span className="rounded bg-warning-700 px-1.5 py-0.5 text-xs uppercase tracking-wide text-white">Dev</span>
-                  Login de desenvolvimento
-                </h2>
-                <p className="text-sm text-ink">
-                  Disponível só no ambiente de desenvolvimento. Entra sem Google, com qualquer e-mail e nome.
-                </p>
-              </div>
-              <form onSubmit={entrarDev} className="space-y-3" noValidate>
-                <InputField
-                  rotulo="E-mail"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  erro={campos.email}
-                  obrigatorio
-                />
-                <InputField
-                  rotulo="Nome"
-                  autoComplete="name"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  erro={campos.nome}
-                  obrigatorio
-                />
-                {erro && (
-                  <Alert tom="erro" anunciar>
-                    <p>{erro}</p>
-                  </Alert>
-                )}
-                <Button type="submit" className="w-full" carregando={enviando}>
-                  Entrar em modo de desenvolvimento
-                </Button>
-              </form>
-            </section>
-          )}
-        </Card>
-      </div>
-    </main>
+        {falha && (
+          <Alert tom="erro" titulo={falha.titulo} anunciar>
+            <p>{falha.texto}</p>
+            {falha.dica && <p>{falha.dica}</p>}
+          </Alert>
+        )}
+        <Button type="submit" className="w-full" carregando={enviando}>
+          Entrar
+        </Button>
+      </form>
+    </TelaPublica>
   );
 }

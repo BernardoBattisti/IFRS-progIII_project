@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +19,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -32,21 +34,25 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import br.edu.ifrs.votacoes.seguranca.CookieSessao;
+import br.edu.ifrs.votacoes.seguranca.LimiteTentativas;
+import br.edu.ifrs.votacoes.usuario.AdminFixo;
 import jakarta.servlet.http.Cookie;
 
 /**
- * Base dos testes de integração: aplicação completa (perfil dev) + MockMvc + PostgreSQL 16 embutido
- * com as migrations Flyway reais + relógio controlável. O banco é limpo antes de cada teste.
+ * Base dos testes de integração: aplicação completa + MockMvc + PostgreSQL 16 embutido com as
+ * migrations Flyway reais + relógio controlável + JavaMailSender simulado. O banco é limpo antes de
+ * cada teste (e o admin fixo recriado); o limite de tentativas é zerado.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("dev")
 @Import(TesteIntegracao.ConfigTeste.class)
 public abstract class TesteIntegracao {
 
     public static final Instant T0 = Instant.parse("2026-11-20T12:00:00Z");
     public static final String SEGREDO = "segredo-de-teste-com-mais-de-32-bytes-0123456789";
-    public static final String EMAIL_ADMIN = "admin@escola.edu.br";
+    public static final String EMAIL_ADMIN = AdminFixo.EMAIL;
+    public static final String SENHA_ADMIN = "admin";
+    public static final String SENHA = "senha-de-teste-123";
 
     @TestConfiguration
     public static class ConfigTeste {
@@ -63,7 +69,6 @@ public abstract class TesteIntegracao {
         r.add("spring.datasource.username", () -> "postgres");
         r.add("spring.datasource.password", () -> "postgres");
         r.add("app.jwt-secret", () -> SEGREDO);
-        r.add("app.admin-emails", () -> EMAIL_ADMIN);
         r.add("app.upload-dir", () -> PASTA_UPLOADS.toString());
     }
 
@@ -85,6 +90,15 @@ public abstract class TesteIntegracao {
     protected RelogioTeste relogio;
     @Autowired
     protected ObjectMapper json;
+    @Autowired
+    protected AdminFixo adminFixo;
+    @Autowired
+    protected LimiteTentativas limiteTentativas;
+    @MockitoBean
+    protected JavaMailSender mailSender;
+
+    /** Cada requisição dos helpers usa um "IP" diferente, para não esbarrar no limite de tentativas. */
+    private static final AtomicInteger IPS = new AtomicInteger();
 
     /** Usuário logado nos testes: cookie de sessão + id. */
     public record Sessao(Cookie cookie, long id) {
@@ -93,40 +107,81 @@ public abstract class TesteIntegracao {
     @BeforeEach
     void limparBanco() {
         jdbc.execute("TRUNCATE usuario, turma, turma_aluno, votacao, votacao_turma, opcao, participacao, "
-                + "voto, guarda_anonima RESTART IDENTITY CASCADE");
+                + "voto, guarda_anonima, dominio_aceito, token_redefinicao_senha RESTART IDENTITY CASCADE");
         relogio.definir(T0);
+        adminFixo.garantir();
+        limiteTentativas.limpar();
+        sessaoAdmin = null;
     }
 
     // ---------- sessões ----------
 
-    protected Sessao login(String email, String nome) throws Exception {
-        MvcResult r = mvc.perform(post("/api/dev/login").contentType(MediaType.APPLICATION_JSON)
-                .content(json.writeValueAsString(Map.of("email", email, "nome", nome))))
-                .andExpect(status().isOk()).andReturn();
+    protected static String ipUnico() {
+        int n = IPS.incrementAndGet();
+        return "10." + ((n >> 16) & 255) + "." + ((n >> 8) & 255) + "." + (n & 255);
+    }
+
+    protected static String emailDe(String nome) {
+        return nome.toLowerCase().replace(' ', '.') + "@escola.edu.br";
+    }
+
+    protected static Sessao sessaoDe(MvcResult r, ObjectMapper json) throws Exception {
         Cookie c = r.getResponse().getCookie(CookieSessao.NOME);
         return new Sessao(c, json.readTree(r.getResponse().getContentAsString()).get("id").asLong());
     }
 
-    protected Sessao aluno(String nome, String matricula) throws Exception {
-        Sessao s = login(nome.toLowerCase().replace(' ', '.') + "@escola.edu.br", nome);
-        cadastro(s, "ALUNO", matricula).andExpect(status().isOk());
-        return s;
+    /** POST /api/auth/cadastro (sem sessão), com IP único. */
+    protected ResultActions cadastrar(String nome, String email, String senha, String matricula, String papel)
+            throws Exception {
+        var corpo = new java.util.HashMap<String, Object>();
+        corpo.put("nome", nome);
+        corpo.put("email", email);
+        corpo.put("senha", senha);
+        corpo.put("matricula", matricula);
+        corpo.put("papel", papel);
+        return enviar(post("/api/auth/cadastro").header("X-Forwarded-For", ipUnico()), null, corpo);
     }
 
+    /** POST /api/auth/login, com IP único. */
+    protected ResultActions tentarLogin(String email, String senha) throws Exception {
+        return enviar(post("/api/auth/login").header("X-Forwarded-For", ipUnico()), null,
+                Map.of("email", email, "senha", senha));
+    }
+
+    protected Sessao login(String email, String senha) throws Exception {
+        return sessaoDe(tentarLogin(email, senha).andExpect(status().isOk()).andReturn(), json);
+    }
+
+    protected Sessao aluno(String nome, String matricula) throws Exception {
+        return sessaoDe(cadastrar(nome, emailDe(nome), SENHA, matricula, "ALUNO")
+                .andExpect(status().isOk()).andReturn(), json);
+    }
+
+    /** Sessão do admin fixo, aberta uma vez por teste (evita esbarrar no limite de login por e-mail). */
     protected Sessao admin() throws Exception {
-        return login(EMAIL_ADMIN, "Administração");
+        if (sessaoAdmin == null) {
+            sessaoAdmin = login(EMAIL_ADMIN, SENHA_ADMIN);
+        }
+        return sessaoAdmin;
+    }
+
+    private Sessao sessaoAdmin;
+
+    /** Docente recém-cadastrado, ainda PENDENTE_APROVACAO. */
+    protected Sessao docentePendente(String nome, String matricula) throws Exception {
+        return sessaoDe(cadastrar(nome, emailDe(nome), SENHA, matricula, "DOCENTE")
+                .andExpect(status().isOk()).andReturn(), json);
     }
 
     protected Sessao docente(String nome, String matricula) throws Exception {
-        Sessao d = login(nome.toLowerCase().replace(' ', '.') + "@escola.edu.br", nome);
-        cadastro(d, "DOCENTE", matricula).andExpect(status().isOk());
+        Sessao d = docentePendente(nome, matricula);
         Sessao adm = admin();
         executar(post("/api/admin/usuarios/" + d.id() + "/aprovar"), adm).andExpect(status().isOk());
         return d;
     }
 
-    protected ResultActions cadastro(Sessao s, String papel, String matricula) throws Exception {
-        return enviar(post("/api/auth/cadastro"), s, Map.of("papel", papel, "matricula", matricula));
+    protected void adicionarDominio(String dominio) throws Exception {
+        enviar(post("/api/admin/dominios"), admin(), Map.of("dominio", dominio)).andExpect(status().isOk());
     }
 
     // ---------- requisições ----------

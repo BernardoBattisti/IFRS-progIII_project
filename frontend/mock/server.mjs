@@ -5,18 +5,26 @@
 // Uso:  node mock/server.mjs        (porta 8080, ou MOCK_PORT)
 //       BACKEND_URL=http://localhost:8080 npm run dev
 //
-// Contas de exemplo para o login de desenvolvimento (qualquer outro e-mail
-// cria uma conta nova em CADASTRO_INCOMPLETO):
-//   admin@ifrs.edu.br     → ADMIN
-//   ana@ifrs.edu.br       → DOCENTE ativo
-//   carlos@ifrs.edu.br    → DOCENTE pendente de aprovação
-//   rita@ifrs.edu.br      → DOCENTE rejeitado
+// Variáveis: MOCK_PORT, MOCK_BASE_URL (base do link de redefinição; padrão
+// http://localhost:3000), MOCK_RATE_LIMIT (tentativas/min por IP nas rotas
+// públicas; padrão 10), MOCK_LOG=1 (loga cada requisição).
+//
+// Contas de exemplo (senha "senha123", exceto o admin):
+//   adm@gmail.com / admin  → ADMIN fixo (fora da verificação de domínio)
+//   ana@ifrs.edu.br        → DOCENTE ativo
+//   carlos@ifrs.edu.br     → DOCENTE pendente de aprovação
+//   rita@ifrs.edu.br       → DOCENTE rejeitado
 //   joao@aluno.ifrs.edu.br, maria@aluno.ifrs.edu.br, pedro@aluno.ifrs.edu.br → ALUNOS
+// Domínios aceitos iniciais: ifrs.edu.br e aluno.ifrs.edu.br.
+// "Esqueci minha senha" não envia e-mail: o link é impresso no console.
 
 import http from "node:http";
 import crypto from "node:crypto";
 
 const PORT = Number(process.env.MOCK_PORT || 8080);
+const BASE_URL = (process.env.MOCK_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
+const RATE_LIMIT = Number(process.env.MOCK_RATE_LIMIT || 10);
+const ADMIN_EMAIL = "adm@gmail.com";
 const COOKIE = "MOCK_SESSAO";
 const H = 3600_000;
 const agora = () => Date.now();
@@ -26,16 +34,41 @@ const iso = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
 let seq = 100;
 const id = () => ++seq;
 
+// senha fica em texto só neste mock (o backend real guarda hash BCrypt).
 const usuarios = [
-  { id: 1, nome: "Administração", email: "admin@ifrs.edu.br", fotoUrl: null, matricula: null, papel: "ADMIN", status: "ATIVO" },
-  { id: 2, nome: "Ana Souza", email: "ana@ifrs.edu.br", fotoUrl: null, matricula: "D1001", papel: "DOCENTE", status: "ATIVO" },
-  { id: 3, nome: "Carlos Lima", email: "carlos@ifrs.edu.br", fotoUrl: null, matricula: "D1002", papel: "DOCENTE", status: "PENDENTE_APROVACAO" },
-  { id: 4, nome: "Rita Mendes", email: "rita@ifrs.edu.br", fotoUrl: null, matricula: "D1003", papel: "DOCENTE", status: "REJEITADO" },
-  { id: 5, nome: "João Pereira", email: "joao@aluno.ifrs.edu.br", fotoUrl: null, matricula: "2023001", papel: "ALUNO", status: "ATIVO" },
-  { id: 6, nome: "Maria Oliveira", email: "maria@aluno.ifrs.edu.br", fotoUrl: null, matricula: "2023002", papel: "ALUNO", status: "ATIVO" },
-  { id: 7, nome: "Pedro Santos", email: "pedro@aluno.ifrs.edu.br", fotoUrl: null, matricula: "2023003", papel: "ALUNO", status: "ATIVO" },
-  { id: 8, nome: "Beatriz Costa", email: "bia@ifrs.edu.br", fotoUrl: null, matricula: "D1004", papel: "DOCENTE", status: "PENDENTE_APROVACAO" },
+  { id: 1, nome: "Administrador", email: ADMIN_EMAIL, senha: "admin", matricula: null, papel: "ADMIN", status: "ATIVO" },
+  { id: 2, nome: "Ana Souza", email: "ana@ifrs.edu.br", senha: "senha123", matricula: "D1001", papel: "DOCENTE", status: "ATIVO" },
+  { id: 3, nome: "Carlos Lima", email: "carlos@ifrs.edu.br", senha: "senha123", matricula: "D1002", papel: "DOCENTE", status: "PENDENTE_APROVACAO" },
+  { id: 4, nome: "Rita Mendes", email: "rita@ifrs.edu.br", senha: "senha123", matricula: "D1003", papel: "DOCENTE", status: "REJEITADO" },
+  { id: 5, nome: "João Pereira", email: "joao@aluno.ifrs.edu.br", senha: "senha123", matricula: "2023001", papel: "ALUNO", status: "ATIVO" },
+  { id: 6, nome: "Maria Oliveira", email: "maria@aluno.ifrs.edu.br", senha: "senha123", matricula: "2023002", papel: "ALUNO", status: "ATIVO" },
+  { id: 7, nome: "Pedro Santos", email: "pedro@aluno.ifrs.edu.br", senha: "senha123", matricula: "2023003", papel: "ALUNO", status: "ATIVO" },
+  { id: 8, nome: "Beatriz Costa", email: "bia@ifrs.edu.br", senha: "senha123", matricula: "D1004", papel: "DOCENTE", status: "PENDENTE_APROVACAO" },
 ];
+const dtoUsuario = ({ senha: _s, ...resto }) => resto;
+
+const dominios = [
+  { id: 1, dominio: "aluno.ifrs.edu.br", criadoEm: iso(agora() - 720 * H) },
+  { id: 2, dominio: "ifrs.edu.br", criadoEm: iso(agora() - 720 * H) },
+];
+const dominioDe = (email) => email.slice(email.lastIndexOf("@") + 1).toLowerCase();
+const dominioAceito = (email) => dominios.length === 0 || dominios.some((d) => d.dominio === dominioDe(email));
+const erroDominio = (email) => new Erro(403, `O domínio de e-mail ${dominioDe(email)} não é aceito por este sistema.`, undefined, "DOMINIO_NAO_ACEITO");
+
+// Tokens de redefinição: sha256(token) -> { usuarioId, expira, usado }
+const tokens = new Map();
+const sha256 = (t) => crypto.createHash("sha256").update(t).digest("hex");
+
+// Limite de tentativas nas rotas públicas: ip -> [timestamps]
+const tentativas = new Map();
+function limitar(req) {
+  const ip = req.socket.remoteAddress || "?";
+  const t = agora();
+  const l = (tentativas.get(ip) || []).filter((x) => t - x < 60_000);
+  l.push(t);
+  tentativas.set(ip, l);
+  if (l.length > RATE_LIMIT) throw new Erro(429, "Muitas tentativas. Aguarde um minuto.");
+}
 
 const turmas = [
   { id: 10, nome: "Informática 2º ano", descricao: "Turma integrada, turno da manhã.", codigo: "K7PX4QMZ", docenteId: 2, alunos: new Set([5, 6]) },
@@ -175,9 +208,9 @@ function gerarCodigo() {
 
 // ---------------------------------------------------------------- http
 class Erro extends Error {
-  constructor(status, mensagem, campos) { super(mensagem); this.status = status; this.campos = campos; }
+  constructor(status, mensagem, campos, erro) { super(mensagem); this.status = status; this.campos = campos; this.erro = erro; }
 }
-const NOMES = { 400: "VALIDACAO", 401: "NAO_AUTENTICADO", 403: "SEM_PERMISSAO", 404: "NAO_ENCONTRADO", 409: "CONFLITO", 422: "REGRA_NEGOCIO" };
+const NOMES = { 400: "VALIDACAO", 401: "NAO_AUTENTICADO", 403: "SEM_PERMISSAO", 404: "NAO_ENCONTRADO", 409: "CONFLITO", 422: "REGRA_NEGOCIO", 429: "MUITAS_TENTATIVAS" };
 
 function lerCorpo(req) {
   return new Promise((ok) => { const p = []; req.on("data", (c) => p.push(c)); req.on("end", () => ok(Buffer.concat(p))); });
@@ -188,6 +221,8 @@ function usuarioDaSessao(req) {
 }
 function exigir(u, papel) {
   if (!u) throw new Erro(401, "Você precisa entrar para continuar.");
+  // Sessões abertas também param de funcionar se o domínio sair da lista (seção 2.2).
+  if (u.papel !== "ADMIN" && !dominioAceito(u.email)) throw erroDominio(u.email);
   if (papel && (u.status !== "ATIVO" || u.papel !== papel)) throw new Erro(403, "Você não tem permissão para fazer isso.");
 }
 function validarInput(b, publicar) {
@@ -214,14 +249,6 @@ async function rotear(req, res, url) {
   const json = () => { try { return corpo && corpo.length ? JSON.parse(corpo.toString()) : {}; } catch { throw new Erro(400, "JSON inválido."); } };
   let r;
 
-  if (m === "GET" && p === "/auth/config") return [200, { devLogin: true, googleHabilitado: true }];
-  if (m === "GET" && p === "/oauth2/authorization/google") {
-    // Simula um OAuth bem-sucedido: entra como João e volta para "/".
-    res.setHeader("Set-Cookie", `${COOKIE}=5; Path=/; HttpOnly; SameSite=Lax`);
-    res.writeHead(302, { Location: `http://localhost:${PORT}/` });
-    res.end();
-    return null;
-  }
   if (m === "GET" && (r = p.match(/^\/arquivos\/([\w.-]+)$/))) {
     const a = arquivos.get(r[1]);
     if (!a) throw new Erro(404, "Arquivo não encontrado.");
@@ -229,40 +256,88 @@ async function rotear(req, res, url) {
     res.end(a.dados);
     return null;
   }
-  if (m === "POST" && p === "/dev/login") {
+  const validarSenha = (senha, campo, c) => {
+    if (typeof senha !== "string" || [...senha].length < 8) c[campo] = "A senha precisa ter pelo menos 8 caracteres.";
+    else if (Buffer.byteLength(senha) > 72) c[campo] = "A senha pode ter no máximo 72 caracteres.";
+  };
+  const abrirSessao = (x) => res.setHeader("Set-Cookie", `${COOKIE}=${x.id}; Path=/; HttpOnly; SameSite=Lax; Max-Age=43200`);
+
+  if (m === "POST" && p === "/auth/cadastro") {
+    limitar(req);
     const b = json();
     const c = {};
-    if (!b.email || !/^\S+@\S+\.\S+$/.test(b.email)) c.email = "Informe um e-mail válido.";
-    if (!b.nome || !b.nome.trim()) c.nome = "Informe o nome.";
-    if (Object.keys(c).length) throw new Erro(400, "Dados inválidos.", c);
-    let x = usuarios.find((y) => y.email.toLowerCase() === b.email.toLowerCase());
-    if (!x) { x = { id: id(), nome: b.nome.trim(), email: b.email.trim(), fotoUrl: null, matricula: null, papel: null, status: "CADASTRO_INCOMPLETO" }; usuarios.push(x); }
-    res.setHeader("Set-Cookie", `${COOKIE}=${x.id}; Path=/; HttpOnly; SameSite=Lax`);
-    return [200, x];
+    const email = String(b.email || "").trim().toLowerCase();
+    if (!b.nome || !String(b.nome).trim()) c.nome = "O nome é obrigatório.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) c.email = "Informe um e-mail válido.";
+    validarSenha(b.senha, "senha", c);
+    if (!b.matricula || !String(b.matricula).trim()) c.matricula = "A matrícula é obrigatória.";
+    if (!["ALUNO", "DOCENTE"].includes(b.papel)) c.papel = "Escolha Aluno ou Docente.";
+    if (Object.keys(c).length) throw new Erro(400, "Alguns campos estão inválidos.", c);
+    if (!dominioAceito(email)) throw erroDominio(email);
+    if (usuarios.some((y) => y.email.toLowerCase() === email)) throw new Erro(409, "Já existe uma conta com este e-mail.");
+    if (usuarios.some((y) => y.matricula === String(b.matricula).trim())) throw new Erro(409, "Essa matrícula já está cadastrada em outra conta.");
+    const x = { id: id(), nome: String(b.nome).trim(), email, senha: b.senha, matricula: String(b.matricula).trim(), papel: b.papel, status: b.papel === "ALUNO" ? "ATIVO" : "PENDENTE_APROVACAO" };
+    usuarios.push(x);
+    abrirSessao(x);
+    return [200, dtoUsuario(x)];
   }
-  if (m === "GET" && p === "/auth/me") { exigir(u); return [200, u]; }
+  if (m === "POST" && p === "/auth/login") {
+    limitar(req);
+    const b = json();
+    const email = String(b.email || "").trim().toLowerCase();
+    const x = usuarios.find((y) => y.email.toLowerCase() === email);
+    if (!x || x.senha !== b.senha) throw new Erro(401, "E-mail ou senha incorretos.");
+    if (x.papel !== "ADMIN" && !dominioAceito(x.email)) throw erroDominio(x.email);
+    abrirSessao(x);
+    return [200, dtoUsuario(x)];
+  }
+  if (m === "GET" && p === "/auth/me") { exigir(u); return [200, dtoUsuario(u)]; }
   if (m === "POST" && p === "/auth/logout") {
     res.setHeader("Set-Cookie", `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
     return [204];
   }
-  if (m === "POST" && p === "/auth/cadastro") {
+  if (m === "PUT" && p === "/auth/senha") {
     exigir(u);
-    if (u.status !== "CADASTRO_INCOMPLETO") throw new Erro(422, "Seu cadastro já foi concluído.");
+    if (u.papel === "ADMIN") throw new Erro(403, "A senha do administrador não pode ser trocada.");
     const b = json();
     const c = {};
-    if (!["ALUNO", "DOCENTE"].includes(b.papel)) c.papel = "Escolha Aluno ou Docente.";
-    if (!b.matricula || !b.matricula.trim()) c.matricula = "A matrícula é obrigatória.";
-    if (Object.keys(c).length) throw new Erro(400, "Dados inválidos.", c);
-    if (usuarios.some((y) => y.matricula === b.matricula.trim())) throw new Erro(409, "Essa matrícula já está cadastrada em outra conta.");
-    u.papel = b.papel; u.matricula = b.matricula.trim(); u.status = b.papel === "ALUNO" ? "ATIVO" : "PENDENTE_APROVACAO";
-    return [200, u];
+    if (!b.senhaAtual) c.senhaAtual = "Informe a senha atual.";
+    validarSenha(b.novaSenha, "novaSenha", c);
+    if (Object.keys(c).length) throw new Erro(400, "Alguns campos estão inválidos.", c);
+    if (b.senhaAtual !== u.senha) throw new Erro(422, "A senha atual está incorreta.");
+    u.senha = b.novaSenha;
+    return [204];
+  }
+  if (m === "POST" && p === "/auth/esqueci-senha") {
+    limitar(req);
+    const email = String(json().email || "").trim().toLowerCase();
+    const x = usuarios.find((y) => y.email.toLowerCase() === email);
+    if (x && x.papel !== "ADMIN") {
+      for (const [k, t] of tokens) if (t.usuarioId === x.id) tokens.delete(k); // novo pedido invalida os anteriores
+      const token = crypto.randomBytes(32).toString("base64url");
+      tokens.set(sha256(token), { usuarioId: x.id, expira: agora() + H, usado: false });
+      console.log(`[mock] Link de redefinição para ${x.email}: ${BASE_URL}/redefinir-senha?token=${token}`);
+    }
+    return [204];
+  }
+  if (m === "POST" && p === "/auth/redefinir-senha") {
+    limitar(req);
+    const b = json();
+    const t = tokens.get(sha256(String(b.token || "")));
+    if (!t || t.usado || t.expira < agora()) throw new Erro(422, "Este link de redefinição é inválido ou expirou.");
+    const c = {};
+    validarSenha(b.novaSenha, "novaSenha", c);
+    if (Object.keys(c).length) throw new Erro(400, "Alguns campos estão inválidos.", c);
+    t.usado = true;
+    usuarios.find((y) => y.id === t.usuarioId).senha = b.novaSenha;
+    return [204];
   }
 
   // admin
   if (m === "GET" && p === "/admin/usuarios") {
     exigir(u, "ADMIN");
     const s = url.searchParams.get("status"), pa = url.searchParams.get("papel");
-    return [200, usuarios.filter((x) => (!s || x.status === s) && (!pa || x.papel === pa))];
+    return [200, usuarios.filter((x) => (!s || x.status === s) && (!pa || x.papel === pa)).map(dtoUsuario)];
   }
   if (m === "POST" && (r = p.match(/^\/admin\/usuarios\/(\d+)\/(aprovar|rejeitar)$/))) {
     exigir(u, "ADMIN");
@@ -270,7 +345,28 @@ async function rotear(req, res, url) {
     if (!x) throw new Erro(404, "Usuário não encontrado.");
     if (x.papel !== "DOCENTE" || x.status !== "PENDENTE_APROVACAO") throw new Erro(422, "Só docentes aguardando aprovação podem ser aprovados ou rejeitados.");
     x.status = r[2] === "aprovar" ? "ATIVO" : "REJEITADO";
-    return [200, x];
+    return [200, dtoUsuario(x)];
+  }
+  if (m === "GET" && p === "/admin/dominios") {
+    exigir(u, "ADMIN");
+    return [200, [...dominios].sort((a, b) => a.dominio.localeCompare(b.dominio))];
+  }
+  if (m === "POST" && p === "/admin/dominios") {
+    exigir(u, "ADMIN");
+    const d = String(json().dominio || "").replace(/\s+/g, "").replace(/^@+/, "").toLowerCase();
+    if (!/^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(d))
+      throw new Erro(400, "Formato de domínio inválido.", { dominio: "Use um domínio como ifrs.edu.br, sem @ e sem espaços." });
+    if (dominios.some((x) => x.dominio === d)) throw new Erro(409, `O domínio ${d} já está na lista.`);
+    const novo = { id: id(), dominio: d, criadoEm: iso(agora()) };
+    dominios.push(novo);
+    return [200, novo];
+  }
+  if (m === "DELETE" && (r = p.match(/^\/admin\/dominios\/(\d+)$/))) {
+    exigir(u, "ADMIN");
+    const i = dominios.findIndex((x) => x.id === Number(r[1]));
+    if (i < 0) throw new Erro(404, "Domínio não encontrado.");
+    dominios.splice(i, 1);
+    return [204];
   }
 
   // turmas
@@ -468,7 +564,7 @@ http
       if (res.headersSent) return res.end();
       const status = e instanceof Erro ? e.status : 500;
       if (!(e instanceof Erro)) console.error(e);
-      const body = { status, erro: NOMES[status] || "ERRO_INTERNO", mensagem: e instanceof Erro ? e.message : "Erro interno." };
+      const body = { status, erro: (e instanceof Erro && e.erro) || NOMES[status] || "ERRO_INTERNO", mensagem: e instanceof Erro ? e.message : "Erro interno." };
       if (e instanceof Erro && e.campos) body.campos = e.campos;
       res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
       res.end(JSON.stringify(body));

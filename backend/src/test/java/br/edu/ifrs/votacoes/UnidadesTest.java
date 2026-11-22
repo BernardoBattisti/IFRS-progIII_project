@@ -9,6 +9,9 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import br.edu.ifrs.votacoes.arquivo.TipoImagem;
+import br.edu.ifrs.votacoes.dominio.DominioService;
+import br.edu.ifrs.votacoes.seguranca.LimiteTentativas;
+import br.edu.ifrs.votacoes.suporte.RelogioTeste;
 import br.edu.ifrs.votacoes.turma.GeradorCodigo;
 import br.edu.ifrs.votacoes.votacao.EstadoVotacao;
 
@@ -50,5 +53,29 @@ class UnidadesTest {
         assertThat(TipoImagem.detectar("GIF89a".getBytes())).isEmpty();
         assertThat(TipoImagem.detectar(new byte[] { (byte) 0xFF })).isEmpty();
         assertThat(TipoImagem.detectar(new byte[0])).isEmpty();
+    }
+
+    @Test
+    void normalizacaoDeDominio() {
+        assertThat(DominioService.normalizar("  @IFRS.edu.BR ")).isEqualTo("ifrs.edu.br");
+        assertThat(DominioService.normalizar("ifrs. edu.br")).isEqualTo("ifrs.edu.br");
+        assertThat(DominioService.normalizar(null)).isEmpty();
+        assertThat(DominioService.dominioDoEmail("Fulano@Aluno.IFRS.edu.br")).isEqualTo("aluno.ifrs.edu.br");
+    }
+
+    @Test
+    void limiteDeTentativasPorChaveEJanela() {
+        RelogioTeste relogio = new RelogioTeste(INICIO);
+        LimiteTentativas limite = new LimiteTentativas(relogio);
+        for (int i = 0; i < 10; i++) {
+            assertThat(limite.permitir("login:a@x.com", 10)).isTrue();
+        }
+        assertThat(limite.permitir("login:a@x.com", 10)).isFalse();
+        assertThat(limite.permitir("esqueci:a@x.com", 5)).isTrue();
+        assertThat(limite.permitir("login:b@x.com", 10)).isTrue();
+        relogio.avancar(java.time.Duration.ofSeconds(59));
+        assertThat(limite.permitir("login:a@x.com", 10)).isFalse();
+        relogio.avancar(java.time.Duration.ofSeconds(1));
+        assertThat(limite.permitir("login:a@x.com", 10)).isTrue();
     }
 }

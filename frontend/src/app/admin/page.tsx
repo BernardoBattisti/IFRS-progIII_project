@@ -34,7 +34,7 @@ export default function FilaAprovacao() {
       {carregando && <Carregando texto="Carregando pedidos…" />}
       {erro && <ErroCarregar mensagem={erro} aoTentar={recarregar} />}
       {dados && dados.length === 0 && (
-        <EmptyState titulo="Nenhum pedido pendente">Quando um docente concluir o cadastro, o pedido aparece aqui.</EmptyState>
+        <EmptyState titulo="Nenhum pedido pendente">Quando um docente criar uma conta, o pedido de acesso aparece aqui.</EmptyState>
       )}
       {dados && dados.length > 0 && (
         <ul className="space-y-3">

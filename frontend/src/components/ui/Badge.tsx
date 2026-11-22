@@ -44,14 +44,12 @@ export function EstadoBadge({ estado }: { estado: EstadoVotacao }) {
 }
 
 export const ROTULO_STATUS: Record<StatusConta, string> = {
-  CADASTRO_INCOMPLETO: "Cadastro incompleto",
   PENDENTE_APROVACAO: "Aguardando aprovação",
   ATIVO: "Ativo",
   REJEITADO: "Rejeitado",
 };
 
 const TOM_STATUS: Record<StatusConta, Tom> = {
-  CADASTRO_INCOMPLETO: "neutro",
   PENDENTE_APROVACAO: "aviso",
   ATIVO: "sucesso",
   REJEITADO: "erro",

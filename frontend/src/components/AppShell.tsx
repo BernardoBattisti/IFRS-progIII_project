@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import type { Papel } from "@/lib/types";
 import { Protegido, useSessao } from "./Sessao";
-import { Button } from "./ui/Button";
+import { Button, LinkBotao } from "./ui/Button";
 import { cx } from "./ui/cx";
 
 const NAV: Record<Papel, { href: string; rotulo: string; exato?: boolean }[]> = {
@@ -20,8 +20,12 @@ const NAV: Record<Papel, { href: string; rotulo: string; exato?: boolean }[]> = 
   ADMIN: [
     { href: "/admin", rotulo: "Aprovações", exato: true },
     { href: "/admin/usuarios", rotulo: "Usuários" },
+    { href: "/admin/dominios", rotulo: "Domínios" },
   ],
 };
+
+// "Minha conta" (troca de senha) não existe para o admin fixo (seção 2.3).
+const CONTA: Partial<Record<Papel, string>> = { ALUNO: "/aluno/conta", DOCENTE: "/docente/conta" };
 
 const ROTULO_PAPEL: Record<Papel, string> = { ALUNO: "Aluno", DOCENTE: "Docente", ADMIN: "Administrador" };
 
@@ -46,6 +50,7 @@ function Cabecalho({ papel }: { papel: Papel }) {
   const pathname = usePathname();
   const [saindo, setSaindo] = useState(false);
   const itens = NAV[papel];
+  const conta = CONTA[papel];
   // O item ativo é o de prefixo mais longo que casa com a rota atual.
   const ativo = itens
     .filter((i) => (i.exato ? pathname === i.href : pathname === i.href || pathname.startsWith(i.href + "/")))
@@ -57,14 +62,24 @@ function Cabecalho({ papel }: { papel: Papel }) {
         <div className="h-full w-16 bg-accent-red" />
       </div>
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
-        <Link href={itens[0].href} className="rounded-md" aria-label="Votações IFRS — página inicial">
+        <Link href={itens[0].href} className="inline-flex min-h-11 items-center rounded-md" aria-label="Votações IFRS — página inicial">
           <Marca />
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <p className="hidden text-right text-sm sm:block">
             <span className="block font-semibold text-ink">{usuario.nome}</span>
             <span className="block text-ink-muted">{ROTULO_PAPEL[papel]}</span>
           </p>
+          {conta && (
+            <LinkBotao
+              href={conta}
+              variante={pathname === conta ? "secondary" : "ghost"}
+              tamanho="sm"
+              aria-current={pathname === conta ? "page" : undefined}
+            >
+              Minha conta
+            </LinkBotao>
+          )}
           <Button
             variante="secondary"
             tamanho="sm"
@@ -79,14 +94,14 @@ function Cabecalho({ papel }: { papel: Papel }) {
         </div>
       </div>
       <nav aria-label="Principal" className="mx-auto max-w-5xl px-4">
-        <ul className="flex gap-1">
+        <ul className="flex gap-0.5 sm:gap-1">
           {itens.map((i) => (
             <li key={i.href}>
               <Link
                 href={i.href}
                 aria-current={ativo === i.href ? "page" : undefined}
                 className={cx(
-                  "inline-flex min-h-11 items-center border-b-[3px] px-3 font-semibold",
+                  "inline-flex min-h-11 items-center border-b-[3px] px-2 font-semibold sm:px-3",
                   ativo === i.href
                     ? "border-brand-600 text-brand-700"
                     : "border-transparent text-ink-muted hover:text-ink hover:border-line",

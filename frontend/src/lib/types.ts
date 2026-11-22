@@ -1,19 +1,23 @@
 // Tipos espelhando o contrato em docs/ESPECIFICACAO.md (seção 5).
 
 export type Papel = "ALUNO" | "DOCENTE" | "ADMIN";
-export type StatusConta = "CADASTRO_INCOMPLETO" | "PENDENTE_APROVACAO" | "ATIVO" | "REJEITADO";
+export type StatusConta = "PENDENTE_APROVACAO" | "ATIVO" | "REJEITADO";
 
 export type Usuario = {
   id: number;
   nome: string;
   email: string;
-  fotoUrl: string | null;
   matricula: string | null;
-  papel: Papel | null;
+  papel: Papel;
   status: StatusConta;
 };
 
-export type AuthConfig = { devLogin: boolean; googleHabilitado: boolean };
+/** Domínio de e-mail aceito no cadastro e no login (seção 5.2). */
+export type Dominio = { id: number; dominio: string; criadoEm: string };
+
+/** Senha: mínimo 8 caracteres; máximo 72 bytes (limite do BCrypt). */
+export const SENHA_MIN = 8;
+export const SENHA_MAX_BYTES = 72;
 
 export type Turma = {
   id: number;

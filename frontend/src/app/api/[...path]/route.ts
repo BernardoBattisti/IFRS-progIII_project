@@ -41,7 +41,7 @@ async function proxy(req: NextRequest): Promise<Response> {
   req.headers.forEach((valor, nome) => {
     if (!HOP_BY_HOP.has(nome.toLowerCase())) headers.set(nome, valor);
   });
-  // Informa ao backend o endereço público (útil para o redirect do OAuth).
+  // Informa ao backend o endereço público (host e protocolo originais).
   const hostPublico = req.headers.get("host");
   if (hostPublico) headers.set("x-forwarded-host", hostPublico);
   headers.set("x-forwarded-proto", entrada.protocol.replace(":", ""));

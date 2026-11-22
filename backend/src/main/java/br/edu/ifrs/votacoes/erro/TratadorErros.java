@@ -36,6 +36,10 @@ public class TratadorErros {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErroResposta> api(ApiException e) {
+        if (e.getStatus() == HttpStatus.TOO_MANY_REQUESTS) {
+            return ResponseEntity.status(e.getStatus()).header("Retry-After", "60")
+                    .body(new ErroResposta(e.getStatus().value(), e.getErro(), e.getMessage(), null));
+        }
         return resposta(e.getStatus(), e.getErro(), e.getMessage(), e.getCampos());
     }
 

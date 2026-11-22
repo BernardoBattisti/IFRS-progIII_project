@@ -25,12 +25,6 @@ public class Usuario {
     @Column(nullable = false)
     private String nome;
 
-    @Column(name = "foto_url")
-    private String fotoUrl;
-
-    @Column(name = "google_sub")
-    private String googleSub;
-
     private String matricula;
 
     @Enumerated(EnumType.STRING)
@@ -40,17 +34,30 @@ public class Usuario {
     @Column(nullable = false)
     private StatusConta status;
 
+    /** Hash BCrypt da senha; nulo em contas antigas (login Google) até redefinirem a senha. */
+    @Column(name = "senha_hash")
+    private String senhaHash;
+
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
     protected Usuario() {
     }
 
-    public Usuario(String email, String nome, Instant criadoEm) {
+    public Usuario(String email, String nome, String matricula, Papel papel, StatusConta status,
+            String senhaHash, Instant criadoEm) {
         this.email = email;
         this.nome = nome;
-        this.status = StatusConta.CADASTRO_INCOMPLETO;
+        this.matricula = matricula;
+        this.papel = papel;
+        this.status = status;
+        this.senhaHash = senhaHash;
         this.criadoEm = criadoEm;
+    }
+
+    /** O administrador (conta fixa): isento da verificação de domínio, sem troca/recuperação de senha. */
+    public boolean isAdmin() {
+        return papel == Papel.ADMIN;
     }
 
     public boolean isAtivo() {
@@ -81,20 +88,12 @@ public class Usuario {
         this.nome = nome;
     }
 
-    public String getFotoUrl() {
-        return fotoUrl;
+    public String getSenhaHash() {
+        return senhaHash;
     }
 
-    public void setFotoUrl(String fotoUrl) {
-        this.fotoUrl = fotoUrl;
-    }
-
-    public String getGoogleSub() {
-        return googleSub;
-    }
-
-    public void setGoogleSub(String googleSub) {
-        this.googleSub = googleSub;
+    public void setSenhaHash(String senhaHash) {
+        this.senhaHash = senhaHash;
     }
 
     public String getMatricula() {

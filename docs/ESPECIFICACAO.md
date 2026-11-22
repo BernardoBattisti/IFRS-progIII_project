@@ -26,19 +26,54 @@ o cookie de sessão é de mesma origem e não há CORS.
 ## 2. Perfis e contas
 
 Papéis: `ALUNO`, `DOCENTE`, `ADMIN`.
-Status da conta: `CADASTRO_INCOMPLETO`, `PENDENTE_APROVACAO`, `ATIVO`, `REJEITADO`.
+Status da conta: `PENDENTE_APROVACAO`, `ATIVO`, `REJEITADO`.
 
-- Login **somente via Google OAuth**. Domínios de e-mail aceitos vêm de `APP_ALLOWED_DOMAINS`
-  (lista separada por vírgula; vazia = qualquer conta Google). Domínio não aceito → login negado.
-- Primeiro acesso: conta criada como `CADASTRO_INCOMPLETO` (sem papel). O usuário escolhe
-  **Aluno** ou **Docente** e informa a **matrícula** (obrigatória para ambos, única no sistema).
-  - Aluno → `ATIVO` imediatamente.
-  - Docente → `PENDENTE_APROVACAO` até um admin aprovar (`ATIVO`) ou rejeitar (`REJEITADO`).
-- E-mails listados em `APP_ADMIN_EMAILS` viram `ADMIN` + `ATIVO` ao logar (sem matrícula).
-- Admin: lista usuários, aprova e rejeita docentes. Não gerencia votações.
-- **Login de desenvolvimento**: apenas com o perfil Spring `dev` ativo, `POST /api/dev/login`
-  permite entrar informando e-mail e nome, sem Google. Nunca disponível fora do perfil `dev`.
-- Sessão: JWT assinado (`APP_JWT_SECRET`) em cookie `HttpOnly`, `SameSite=Lax`.
+### 2.1 Login com e-mail e senha
+
+- Não há login externo (Google ou outro). Contas e senhas ficam no banco; senha guardada com
+  hash **BCrypt**, nunca em texto.
+- **Cadastro** (público): nome, e-mail, senha, matrícula e papel (**Aluno** ou **Docente**).
+  - E-mail único (comparado em minúsculas); matrícula obrigatória e única.
+  - Senha com **no mínimo 8 caracteres** (máximo 72, limite do BCrypt).
+  - Aluno → `ATIVO` imediatamente e já entra logado.
+  - Docente → `PENDENTE_APROVACAO` até um admin aprovar (`ATIVO`) ou rejeitar (`REJEITADO`). Entra
+    logado, mas só vê a tela de espera.
+- **Login**: e-mail + senha. Credenciais erradas → 401 com mensagem genérica
+  ("E-mail ou senha incorretos."), sem revelar se o e-mail existe.
+- **Trocar senha** (usuário logado): informa a senha atual e a nova. Não vale para o admin fixo.
+- Sessão: JWT assinado (`APP_JWT_SECRET`) em cookie `HttpOnly`, `SameSite=Lax`, válido por 12 h.
+
+### 2.2 Domínios de e-mail aceitos
+
+- O admin mantém, pela página dele, a **lista de domínios aceitos** (ex.: `ifrs.edu.br`). Fica no
+  banco, não em variável de ambiente.
+- **Lista vazia = qualquer domínio** é aceito.
+- A lista é conferida no **cadastro** e em **todo login**: se o domínio de uma conta for removido da
+  lista, ela deixa de entrar (403 "O domínio de e-mail ... não é aceito por este sistema.") até o
+  domínio voltar. Sessões já abertas dessa conta também passam a receber 403.
+- Comparação exata do domínio, em minúsculas (`aluno.ifrs.edu.br` ≠ `ifrs.edu.br`).
+
+### 2.3 Administrador
+
+- Conta fixa **`adm@gmail.com`** / senha **`admin`**, criada automaticamente na inicialização se
+  não existir. Não pode trocar a senha, não usa recuperação por e-mail e **não passa pela verificação
+  de domínio**. Não pode ser excluída nem rebaixada. Existe só um admin.
+- Admin: lista usuários, aprova e rejeita docentes, gerencia a lista de domínios. Não gerencia
+  votações.
+
+### 2.4 Recuperação de senha por e-mail
+
+- "Esqueci minha senha": o usuário informa o e-mail. A resposta é **sempre** a mesma (204), exista ou
+  não a conta, para não revelar quais e-mails estão cadastrados.
+- Se a conta existir (e não for o admin), o sistema envia um e-mail com link
+  `${APP_BASE_URL}/redefinir-senha?token=<token>`.
+  - Token aleatório (≥ 32 bytes), guardado no banco **apenas como hash**; vale **1 hora** e **uma
+    única vez**. Um novo pedido invalida os tokens anteriores do usuário.
+  - Redefinir com token válido: define a nova senha (mesma regra de 8 caracteres).
+  - Token inválido, expirado ou já usado → 422 "Este link de redefinição é inválido ou expirou."
+- Envio por SMTP. No Docker Compose sobe o **Mailpit** (caixa de e-mail de teste em
+  <http://localhost:8025>); para envio real basta apontar as variáveis `MAIL_*` para outro SMTP
+  (ex.: Gmail com senha de app). Falha no envio é registrada em log e não muda a resposta (204).
 
 ## 3. Turmas
 
@@ -129,26 +164,40 @@ Detalhes fixados na implementação:
   `Sec-Fetch-Site` diferente de `same-origin`/`none`) → 403. O frontend sempre chama `/api/...` relativo.
 - Limites: até 50 opções, 50 turmas e 50 itens por envio de votos; `quantidade` nunca maior que
   `votosPorAluno`.
-- Login Google recusado redireciona para `/?erroLogin=<codigo>`: `dominio_nao_permitido`,
-  `email_nao_verificado`, `conta_divergente`, `falha_google`.
 - `imagemUrl` só aceita o valor devolvido por `POST /uploads`.
 
 ### 5.1 Autenticação
 
 | Método | Rota | Acesso | Descrição |
 |--------|------|--------|-----------|
-| GET | `/auth/config` | público | `{ "devLogin": bool, "googleHabilitado": bool }` |
-| GET | `/oauth2/authorization/google` | público | inicia o OAuth (redirect). Callback: `/api/login/oauth2/code/google`; ao final redireciona para `/` |
+| POST | `/auth/cadastro` | público | `{ nome, email, senha, matricula, papel: "ALUNO"\|"DOCENTE" }` → `Usuario` e já abre a sessão. 409 e-mail ou matrícula já cadastrados; 403 domínio não aceito |
+| POST | `/auth/login` | público | `{ email, senha }` → `Usuario` e abre a sessão. 401 credenciais erradas; 403 domínio não aceito |
 | GET | `/auth/me` | autenticado | `Usuario` |
-| POST | `/auth/cadastro` | `CADASTRO_INCOMPLETO` | `{ "papel": "ALUNO"\|"DOCENTE", "matricula": "..." }` → `Usuario` |
 | POST | `/auth/logout` | autenticado | 204 |
-| POST | `/dev/login` | perfil `dev` | `{ "email", "nome" }` → `Usuario` |
+| PUT | `/auth/senha` | autenticado (exceto admin) | `{ senhaAtual, novaSenha }` → 204. 422 senha atual incorreta |
+| POST | `/auth/esqueci-senha` | público | `{ email }` → sempre 204 |
+| POST | `/auth/redefinir-senha` | público | `{ token, novaSenha }` → 204. 422 token inválido/expirado |
+
+Limite de tentativas (acima disso → 429, `erro: "MUITAS_TENTATIVAS"`, "Muitas tentativas. Aguarde um
+minuto.", cabeçalho `Retry-After: 60`):
+
+| Rota | Limite |
+|------|--------|
+| `/auth/login` | 10 por minuto por e-mail |
+| `/auth/esqueci-senha` | 5 por minuto por e-mail |
+| `/auth/cadastro`, `/auth/redefinir-senha` | 30 por minuto por IP |
+
+O limite é por e-mail porque numa escola todos saem pelo mesmo IP e porque o IP repassado pelo proxy
+pode ser forjado; o limite por IP é só um freio contra abuso grosseiro.
+
+Domínio de e-mail não aceito (cadastro, login ou sessão aberta) → 403 com
+`erro: "DOMINIO_NAO_ACEITO"`. `POST /auth/logout` funciona mesmo sem sessão válida (sempre 204).
 
 ```ts
 type Usuario = {
-  id: number; nome: string; email: string; fotoUrl: string | null; matricula: string | null;
-  papel: "ALUNO" | "DOCENTE" | "ADMIN" | null;
-  status: "CADASTRO_INCOMPLETO" | "PENDENTE_APROVACAO" | "ATIVO" | "REJEITADO";
+  id: number; nome: string; email: string; matricula: string | null;
+  papel: "ALUNO" | "DOCENTE" | "ADMIN";
+  status: "PENDENTE_APROVACAO" | "ATIVO" | "REJEITADO";
 };
 ```
 
@@ -161,6 +210,13 @@ Todas as rotas abaixo exigem conta `ATIVO` com o papel indicado.
 | GET | `/admin/usuarios?status=&papel=` | `Usuario[]` (filtros opcionais) |
 | POST | `/admin/usuarios/{id}/aprovar` | docente `PENDENTE_APROVACAO` → `ATIVO` |
 | POST | `/admin/usuarios/{id}/rejeitar` | docente `PENDENTE_APROVACAO` → `REJEITADO` |
+| GET | `/admin/dominios` | `Dominio[]` em ordem alfabética |
+| POST | `/admin/dominios` | `{ dominio }` → `Dominio`. Normaliza (minúsculas, sem espaços, sem `@` inicial); 400 formato inválido; 409 já existe |
+| DELETE | `/admin/dominios/{id}` | 204 |
+
+```ts
+type Dominio = { id: number; dominio: string; criadoEm: string };
+```
 
 ### 5.3 Turmas
 
@@ -243,13 +299,11 @@ Em rascunho, `VotacaoInput` aceita dados incompletos apenas no que a publicaçã
 | Variável | Uso |
 |----------|-----|
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | banco |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | OAuth Google (vazio = Google desabilitado) |
-| `APP_BASE_URL` | URL pública do frontend (ex.: `http://localhost:3000`); base do redirect OAuth |
-| `APP_ALLOWED_DOMAINS` | domínios de e-mail aceitos |
-| `APP_ADMIN_EMAILS` | e-mails que viram administradores |
+| `APP_BASE_URL` | URL pública do frontend (ex.: `http://localhost:3000`); base do link de redefinição de senha e da checagem de origem |
 | `APP_JWT_SECRET` | segredo do JWT e do HMAC de anonimato (≥ 32 bytes) |
 | `APP_UPLOAD_DIR` | pasta das imagens |
-| `SPRING_PROFILES_ACTIVE` | `dev` habilita o login de desenvolvimento |
+| `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_STARTTLS` | servidor SMTP (padrão: Mailpit do Compose, `mailpit:1025`, sem autenticação) |
+| `MAIL_FROM` | remetente dos e-mails (padrão `nao-responda@votacoes.local`) |
 | `BACKEND_URL` | (frontend) destino do rewrite `/api/*`, ex.: `http://backend:8080` |
 
 ## 7. Testes
@@ -257,3 +311,6 @@ Em rascunho, `VotacaoInput` aceita dados incompletos apenas no que a publicaçã
 Testes automatizados no backend cobrindo as regras de negócio: limites de votos, repetição de opção,
 envios parciais, janela de datas, elegibilidade por turma, anonimato, visibilidade de resultados,
 ciclo de vida (publicar, despublicar, encerrar, prorrogar) e aprovação de docentes.
+Também: cadastro e login com senha, verificação de domínio no cadastro, no login e em sessão já
+aberta, admin fixo fora da verificação, troca de senha, recuperação de senha (token de uso único,
+expiração, invalidação por novo pedido, resposta igual para e-mail inexistente).

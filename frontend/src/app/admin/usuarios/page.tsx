@@ -72,11 +72,13 @@ export default function Usuarios() {
                   <p className="break-words font-semibold">{u.nome}</p>
                   <p className="break-all text-sm text-ink-muted">{u.email}</p>
                   <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
-                    <Badge>{u.papel ? PAPEIS[u.papel] : "Sem papel"}</Badge>
+                    <Badge>{PAPEIS[u.papel]}</Badge>
                     <StatusBadge status={u.status} />
                     {u.matricula && <span className="text-ink-muted">Matrícula {u.matricula}</span>}
+                    {u.papel === "ADMIN" && <span className="text-ink-muted">Conta fixa do sistema</span>}
                   </div>
                 </div>
+                {/* O admin fixo nunca recebe ações (seção 2.3). */}
                 {u.papel === "DOCENTE" && u.status === "PENDENTE_APROVACAO" && (
                   <DecisaoDocente
                     u={u}

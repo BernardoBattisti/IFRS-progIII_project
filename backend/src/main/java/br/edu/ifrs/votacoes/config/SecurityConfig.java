@@ -1,6 +1,5 @@
 package br.edu.ifrs.votacoes.config;
 
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -8,16 +7,19 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 
+import br.edu.ifrs.votacoes.dominio.DominioService;
 import br.edu.ifrs.votacoes.seguranca.CookieSessao;
 import br.edu.ifrs.votacoes.seguranca.FiltroCookieJwt;
+import br.edu.ifrs.votacoes.seguranca.FiltroLimiteTentativas;
 import br.edu.ifrs.votacoes.seguranca.FiltroOrigem;
 import br.edu.ifrs.votacoes.seguranca.JwtService;
-import br.edu.ifrs.votacoes.seguranca.OAuthHandlers;
+import br.edu.ifrs.votacoes.seguranca.LimiteTentativas;
 import br.edu.ifrs.votacoes.seguranca.RespostasSeguranca;
 import br.edu.ifrs.votacoes.usuario.UsuarioRepository;
 
@@ -25,10 +27,16 @@ import br.edu.ifrs.votacoes.usuario.UsuarioRepository;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    /** BCrypt (custo padrão 10) para as senhas guardadas no banco. */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, CookieSessao cookie, JwtService jwt,
-            UsuarioRepository usuarios, RespostasSeguranca respostas, AppProperties props, OAuthHandlers oauthHandlers,
-            ObjectProvider<ClientRegistrationRepository> registrosGoogle) throws Exception {
+            UsuarioRepository usuarios, DominioService dominios, RespostasSeguranca respostas, AppProperties props,
+            LimiteTentativas limite) throws Exception {
 
         http
             // CSRF: sem token sincronizador, por decisão. Camadas usadas no lugar dele:
@@ -44,18 +52,17 @@ public class SecurityConfig {
             .logout(AbstractHttpConfigurer::disable)
             .requestCache(AbstractHttpConfigurer::disable)
             // A autenticação nunca é guardada em sessão HTTP: vem sempre do JWT no cookie.
-            // A sessão só pode ser criada pelo handshake OAuth (para guardar o "state").
             .securityContext(c -> c.securityContextRepository(new RequestAttributeSecurityContextRepository()))
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(e -> e.authenticationEntryPoint(respostas).accessDeniedHandler(respostas))
-            .addFilterBefore(new FiltroCookieJwt(cookie, jwt, usuarios), UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(new FiltroOrigem(props, respostas), FiltroCookieJwt.class)
+            .addFilterBefore(new FiltroCookieJwt(cookie, jwt, usuarios, dominios),
+                    UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new FiltroLimiteTentativas(limite, respostas), FiltroCookieJwt.class)
+            .addFilterBefore(new FiltroOrigem(props, respostas), FiltroLimiteTentativas.class)
             .authorizeHttpRequests(a -> a
                 .requestMatchers("/error").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/auth/config").permitAll()
-                .requestMatchers("/api/oauth2/**", "/api/login/oauth2/**").permitAll()
-                // O controlador só existe com o perfil "dev"; fora dele a rota responde 404.
-                .requestMatchers(HttpMethod.POST, "/api/dev/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/cadastro", "/api/auth/login", "/api/auth/logout",
+                        "/api/auth/esqueci-senha", "/api/auth/redefinir-senha").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/arquivos/**").permitAll()
                 .requestMatchers("/api/auth/**").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -63,14 +70,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/turmas/**", "/api/turmas", "/api/votacoes/**", "/api/votacoes")
                     .hasAnyRole("DOCENTE", "ALUNO")
                 .anyRequest().denyAll());
-
-        if (registrosGoogle.getIfAvailable() != null) {
-            http.oauth2Login(o -> o
-                .authorizationEndpoint(ae -> ae.baseUri(GoogleOAuthConfig.BASE_AUTORIZACAO))
-                .redirectionEndpoint(re -> re.baseUri(GoogleOAuthConfig.BASE_CALLBACK))
-                .successHandler(oauthHandlers)
-                .failureHandler(oauthHandlers));
-        }
         return http.build();
     }
 }

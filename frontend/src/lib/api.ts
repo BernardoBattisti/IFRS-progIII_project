@@ -31,7 +31,40 @@ const MENSAGENS_PADRAO: Record<number, string> = {
   409: "Essa ação entrou em conflito com o estado atual. Atualize a página e tente de novo.",
   413: "O arquivo é grande demais.",
   422: "Não foi possível concluir por causa de uma regra do sistema.",
+  429: "Muitas tentativas. Aguarde um minuto e tente de novo.",
 };
+
+// Rotas públicas de autenticação: um 403 de domínio aqui é exibido na própria tela.
+const ROTAS_PUBLICAS = ["/auth/login", "/auth/cadastro", "/auth/esqueci-senha", "/auth/redefinir-senha"];
+
+/** Chave do sessionStorage com a mensagem mostrada no login após a sessão ser encerrada. */
+export const CHAVE_MSG_SESSAO = "votacoes:sessao-encerrada";
+
+/** 403 por domínio de e-mail não aceito (seção 2.2): o backend usa `erro: "DOMINIO_NAO_ACEITO"`. */
+export function ehErroDominio(e: unknown): e is ApiError {
+  return e instanceof ApiError && e.status === 403 && e.erro === "DOMINIO_NAO_ACEITO";
+}
+
+let encerrando = false;
+
+/**
+ * Sessão aberta cujo domínio deixou de ser aceito: encerra a sessão e leva ao
+ * login com a mensagem do backend. Devolve true se a navegação foi iniciada.
+ */
+function encerrarPorDominio(mensagem: string): boolean {
+  if (typeof window === "undefined" || window.location.pathname === "/login") return false;
+  if (encerrando) return true;
+  encerrando = true;
+  try {
+    window.sessionStorage.setItem(CHAVE_MSG_SESSAO, mensagem);
+  } catch {
+    // Sem sessionStorage, o login mostra um texto padrão.
+  }
+  fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" })
+    .catch(() => undefined)
+    .finally(() => window.location.replace("/login?motivo=dominio"));
+  return true;
+}
 
 function mensagemPadrao(status: number) {
   if (MENSAGENS_PADRAO[status]) return MENSAGENS_PADRAO[status];
@@ -79,13 +112,18 @@ export async function api<T = unknown>(caminho: string, opcoes: Opcoes = {}): Pr
 
   if (!resposta.ok) {
     const d = (dados ?? {}) as Partial<ErroApi>;
-    throw new ApiError({
+    const erro = new ApiError({
       status: resposta.status,
       erro: d.erro,
       mensagem:
         typeof d.mensagem === "string" && d.mensagem ? d.mensagem : mensagemPadrao(resposta.status),
       campos: d.campos && typeof d.campos === "object" ? d.campos : undefined,
     });
+    if (ehErroDominio(erro) && !ROTAS_PUBLICAS.includes(caminho.split("?")[0])) {
+      // Indo para o login: a promessa fica pendente para a tela não piscar um erro.
+      if (encerrarPorDominio(erro.message)) return new Promise<T>(() => undefined);
+    }
+    throw erro;
   }
   return dados as T;
 }
