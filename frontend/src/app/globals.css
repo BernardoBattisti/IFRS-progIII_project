@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/*
+ * Tokens do design system (ver DESIGN.md).
+ * Todos os pares texto/fundo usados aqui foram conferidos para WCAG 2.1 AA.
+ */
+@theme {
+  /* Marca — verde institucional. 500 é o tom da marca (#2F9E41), usado só em
+     elementos decorativos/grandes; texto e botões usam 600+ (contraste AA). */
+  --color-brand-50: #eaf6ec;
+  --color-brand-100: #d3edd7;
+  --color-brand-200: #a9dbb1;
+  --color-brand-500: #2f9e41;
+  --color-brand-600: #237a32; /* botão primário / links — 5,38:1 com branco */
+  --color-brand-700: #1e6b2b; /* hover — 6,58:1 */
+  --color-brand-800: #1b5e27; /* pressionado — 7,84:1 */
+
+  /* Vermelho da marca — apoio pontual (faixa do cabeçalho). Nunca usado
+     para erro ou ação destrutiva, para não confundir significado. */
+  --color-accent-red: #cd191e;
+
+  /* Neutros */
+  --color-ink: #1d2939; /* texto principal — 14,7:1 */
+  --color-ink-muted: #475467; /* texto secundário — 7,69:1 */
+  --color-ink-subtle: #667085; /* texto auxiliar — 4,97:1 */
+  --color-line: #d0d5dd; /* divisórias (decorativas) */
+  --color-line-strong: #7a8599; /* borda de campos — 3,72:1 (1.4.11) */
+  --color-canvas: #f6f8f7; /* fundo da página */
+  --color-surface: #ffffff; /* cartões */
+  --color-track: #e4e7ec; /* trilho das barras de resultado */
+
+  /* Semânticas */
+  --color-danger-50: #fef3f2;
+  --color-danger-200: #fecdca;
+  --color-danger-600: #b42318; /* 6,57:1 com branco; 6,05:1 sobre danger-50 */
+  --color-danger-700: #912018;
+  --color-warning-50: #fffaeb;
+  --color-warning-200: #fedf89;
+  --color-warning-700: #93370d; /* 7,21:1 sobre warning-50 */
+  --color-info-50: #eff8ff;
+  --color-info-200: #b2ddff;
+  --color-info-700: #175cd3; /* 5,57:1 sobre info-50 */
+  --color-success-50: #eaf6ec;
+  --color-success-700: #1e6b2b;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  --radius-card: 0.75rem;
+  --radius-control: 0.5rem;
+
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.08);
+  --shadow-overlay: 0 12px 32px rgb(16 24 40 / 0.18);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Foco sempre visível e consistente (2.4.7). */
+:focus-visible {
+  outline: 3px solid var(--color-brand-700);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+dialog::backdrop {
+  background: rgb(16 24 40 / 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
