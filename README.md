@@ -6,7 +6,7 @@ anônimo, turmas que participam, datas, visibilidade do resultado); estudantes v
 administrador aprova os docentes.
 
 - **Backend**: Java 21, Spring Boot 3 — [`backend/`](backend)
-- **Frontend**: Next.js, TypeScript, Tailwind — [`frontend/`](frontend)
+- **Frontend**: Next.js, TypeScript, CSS puro (CSS Modules) — [`frontend/`](frontend)
 - **Banco**: PostgreSQL 16
 - **Regras de negócio e API**: [`docs/ESPECIFICACAO.md`](docs/ESPECIFICACAO.md)
 

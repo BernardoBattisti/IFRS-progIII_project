@@ -10,7 +10,7 @@ Docentes criam votações e definem suas regras; estudantes votam; um administra
 |----------|------------|
 | Banco    | PostgreSQL 16 |
 | Backend  | Java 21, Spring Boot 3, Spring Security, Spring Data JPA, Flyway (`/backend`) |
-| Frontend | Next.js (App Router), TypeScript, Tailwind CSS (`/frontend`) |
+| Frontend | Next.js (App Router), TypeScript, CSS puro com CSS Modules (`/frontend`) |
 | Execução | Docker Compose (postgres + backend + frontend) |
 
 Idioma da interface e das mensagens de erro: **português do Brasil**.
