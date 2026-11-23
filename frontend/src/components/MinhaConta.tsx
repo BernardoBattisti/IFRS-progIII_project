@@ -7,7 +7,8 @@ import { SENHA_MIN, type Papel } from "@/lib/types";
 import { useTitulo } from "@/lib/useTitulo";
 import { useSessao } from "./Sessao";
 import { PageHeader } from "./ui/PageHeader";
-import { Card } from "./ui/Card";
+import { Secao } from "./ui/Card";
+import styles from "./MinhaConta.module.css";
 import { Alert } from "./ui/Alert";
 import { Button } from "./ui/Button";
 import { SenhaField } from "./ui/Field";
@@ -66,30 +67,31 @@ export function MinhaConta() {
   return (
     <>
       <PageHeader titulo="Minha conta" descricao="Seus dados de acesso ao sistema." />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="space-y-4">
-          <h2 className="text-lg font-bold">Seus dados</h2>
-          <dl className="space-y-3">
-            {[
-              ["Nome", usuario.nome, "break-words"],
-              ["E-mail", usuario.email, "break-all"],
-              ["Matrícula", usuario.matricula ?? "—", ""],
-              ["Perfil", ROTULO_PAPEL[usuario.papel], ""],
-            ].map(([rotulo, valor, quebra]) => (
-              <div key={rotulo}>
-                <dt className="text-sm font-semibold text-ink-muted">{rotulo}</dt>
-                <dd className={`text-ink ${quebra}`}>{valor}</dd>
-              </div>
-            ))}
-          </dl>
-          <p className="text-sm text-ink-muted">
+      <div className={styles.colunas}>
+        <Secao id="titulo-dados" titulo="Seus dados">
+          <table className={styles.dados}>
+            <caption className="sr-only">Seus dados</caption>
+            <tbody>
+              {[
+                ["Nome", usuario.nome],
+                ["E-mail", usuario.email],
+                ["Matrícula", usuario.matricula ?? "—"],
+                ["Perfil", ROTULO_PAPEL[usuario.papel]],
+              ].map(([rotulo, valor]) => (
+                <tr key={rotulo}>
+                  <th scope="row">{rotulo}</th>
+                  <td>{valor}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className={styles.nota}>
             Para corrigir nome, e-mail ou matrícula, procure a coordenação do sistema no seu campus.
           </p>
-        </Card>
+        </Secao>
 
-        <Card className="space-y-4">
-          <h2 className="text-lg font-bold">Trocar senha</h2>
-          <form onSubmit={trocar} className="space-y-4" noValidate>
+        <Secao id="titulo-senha" titulo="Trocar senha" variante="form">
+          <form onSubmit={trocar} className={styles.form} noValidate>
             {/* Ajuda gerenciadores de senha a associar a nova senha à conta. */}
             <input type="text" name="username" autoComplete="username" value={usuario.email} readOnly hidden />
             <SenhaField
@@ -133,11 +135,11 @@ export function MinhaConta() {
                 <p>Use a nova senha da próxima vez que entrar.</p>
               </Alert>
             )}
-            <Button type="submit" carregando={enviando} className="w-full sm:w-auto">
+            <Button type="submit" carregando={enviando} className={styles.enviar}>
               Salvar nova senha
             </Button>
           </form>
-        </Card>
+        </Secao>
       </div>
     </>
   );

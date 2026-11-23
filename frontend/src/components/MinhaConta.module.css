@@ -1,0 +1,47 @@
+.colunas {
+  display: grid;
+  gap: var(--esp-4);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .colunas {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.dados {
+  border: 1px solid var(--cinza-400);
+  font-size: var(--texto-p);
+}
+
+.dados th,
+.dados td {
+  border: 1px solid var(--cinza-400);
+  padding: var(--esp-2) var(--esp-3);
+  vertical-align: top;
+}
+
+.dados th {
+  width: 35%;
+  background: var(--cinza-200);
+}
+
+.dados td {
+  overflow-wrap: anywhere;
+}
+
+.nota {
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}
+
+.form > * + * {
+  margin-top: var(--esp-4);
+}
+
+@media (max-width: 639px) {
+  .enviar {
+    width: 100%;
+  }
+}

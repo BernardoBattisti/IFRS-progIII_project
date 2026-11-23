@@ -10,7 +10,9 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Carregando } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErroCarregar } from "@/components/ErroCarregar";
-import { Card } from "@/components/ui/Card";
+import { Secao } from "@/components/ui/Card";
+import { Tabela, celula } from "@/components/ui/Tabela";
+import styles from "./page.module.css";
 import { InputField } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
@@ -52,65 +54,82 @@ export default function TurmasAluno() {
     <>
       <PageHeader titulo="Minhas turmas" descricao="Entre nas turmas dos seus docentes para ver as votações delas." />
 
-      <Card className="mb-8">
-        <h2 className="text-lg font-bold">Entrar em uma turma</h2>
-        <form onSubmit={entrar} noValidate className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start">
-          <div className="sm:w-64">
-            <InputField
-              rotulo="Código da turma"
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-              ajuda="São 8 caracteres. Peça ao seu docente."
-              erro={erroCampo}
-              maxLength={16}
-              autoComplete="off"
-              autoCapitalize="characters"
-              spellCheck={false}
-              className="font-mono tracking-widest uppercase"
-            />
+      <div className={styles.pilha}>
+        <Secao id="titulo-entrar" titulo="Entrar em uma turma" variante="form">
+          <form onSubmit={entrar} noValidate className={styles.form}>
+            <div className={styles.campo}>
+              <InputField
+                rotulo="Código da turma"
+                value={codigo}
+                onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+                ajuda="São 8 caracteres. Peça ao seu docente."
+                erro={erroCampo}
+                maxLength={16}
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                className={styles.codigo}
+              />
+            </div>
+            <Button type="submit" carregando={enviando} className={styles.enviar}>
+              Entrar na turma
+            </Button>
+          </form>
+          <div aria-live="polite" className={styles.mensagens}>
+            {erroEntrar && (
+              <Alert tom="erro" anunciar>
+                <p>{erroEntrar}</p>
+              </Alert>
+            )}
+            {sucesso && (
+              <Alert tom="sucesso">
+                <p>{sucesso}</p>
+              </Alert>
+            )}
           </div>
-          <Button type="submit" carregando={enviando} className="sm:mt-7">
-            Entrar na turma
-          </Button>
-        </form>
-        <div className="mt-3 space-y-2" aria-live="polite">
-          {erroEntrar && (
-            <Alert tom="erro" anunciar>
-              <p>{erroEntrar}</p>
-            </Alert>
-          )}
-          {sucesso && (
-            <Alert tom="sucesso">
-              <p>{sucesso}</p>
-            </Alert>
-          )}
-        </div>
-      </Card>
+        </Secao>
 
-      <section aria-labelledby="titulo-lista" className="space-y-3">
-        <h2 id="titulo-lista" className="text-lg font-bold">
-          Turmas em que você está
-        </h2>
-        {carregando && <Carregando texto="Carregando turmas…" />}
-        {erro && <ErroCarregar mensagem={erro} aoTentar={recarregar} />}
-        {dados && dados.length === 0 && (
-          <EmptyState titulo="Você ainda não está em nenhuma turma">
-            Use o código que seu docente passou para entrar na primeira.
-          </EmptyState>
-        )}
-        {dados && dados.length > 0 && (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {dados.map((t) => (
-              <li key={t.id} className="rounded-[var(--radius-card)] border border-line bg-surface p-4 shadow-[var(--shadow-card)]">
-                <h3 className="break-words font-semibold">{t.nome}</h3>
-                <p className="text-sm text-ink-muted">Docente: {t.docenteNome}</p>
-                {t.descricao && <p className="mt-2 break-words text-sm">{t.descricao}</p>}
-                <p className="mt-2 text-sm text-ink-muted">{plural(t.totalAlunos, "aluno", "alunos")}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <section aria-labelledby="titulo-lista">
+          <h2 id="titulo-lista" className={styles.titulo}>
+            Turmas em que você está
+          </h2>
+          {carregando && <Carregando texto="Carregando turmas…" />}
+          {erro && <ErroCarregar mensagem={erro} aoTentar={recarregar} />}
+          {dados && dados.length === 0 && (
+            <EmptyState titulo="Você ainda não está em nenhuma turma">
+              Use o código que seu docente passou para entrar na primeira.
+            </EmptyState>
+          )}
+          {dados && dados.length > 0 && (
+            <Tabela legenda="Turmas em que você está">
+              <thead>
+                <tr>
+                  <th scope="col">Turma</th>
+                  <th scope="col">Docente</th>
+                  <th scope="col">Descrição</th>
+                  <th scope="col" className={celula.numero}>
+                    Alunos
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {dados.map((t) => (
+                  <tr key={t.id}>
+                    <td data-rotulo="Turma" className={`${celula.principal} ${celula.semRotulo}`}>
+                      {t.nome}
+                    </td>
+                    <td data-rotulo="Docente">{t.docenteNome}</td>
+                    <td data-rotulo="Descrição">{t.descricao || "—"}</td>
+                    <td data-rotulo="Alunos" className={celula.numero}>
+                      {plural(t.totalAlunos, "aluno", "alunos")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Tabela>
+          )}
+        </section>
+      </div>
     </>
   );
 }

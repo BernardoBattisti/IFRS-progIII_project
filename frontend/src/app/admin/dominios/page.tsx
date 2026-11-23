@@ -7,7 +7,9 @@ import type { Dominio } from "@/lib/types";
 import { useDados } from "@/lib/useDados";
 import { useTitulo } from "@/lib/useTitulo";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card } from "@/components/ui/Card";
+import { Secao } from "@/components/ui/Card";
+import { Tabela, celula } from "@/components/ui/Tabela";
+import styles from "./page.module.css";
 import { Carregando } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErroCarregar } from "@/components/ErroCarregar";
@@ -85,10 +87,10 @@ export default function Dominios() {
         descricao="Defina quais e-mails podem criar conta e entrar no sistema. A conta do administrador não passa por esta verificação."
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:items-start">
-        <Card className="space-y-4">
-          <h2 className="text-lg font-bold">Adicionar domínio</h2>
-          <form onSubmit={adicionar} className="space-y-4" noValidate>
+      <div className={styles.pilha}>
+        <Secao id="titulo-adicionar" titulo="Adicionar domínio" variante="form">
+          <form onSubmit={adicionar} className={styles.form} noValidate>
+            <div className={styles.campo}>
             <InputField
               ref={refCampo}
               rotulo="Domínio"
@@ -102,23 +104,21 @@ export default function Dominios() {
               erro={erroCampo}
               ajuda={
                 <>
-                  Só a parte depois do @, como <span className="font-semibold text-ink">ifrs.edu.br</span>. Subdomínios
-                  contam à parte: <span className="font-semibold text-ink">aluno.ifrs.edu.br</span> precisa ser
+                  Só a parte depois do @, como <strong className={styles.escuro}>ifrs.edu.br</strong>. Subdomínios
+                  contam à parte: <strong className={styles.escuro}>aluno.ifrs.edu.br</strong> precisa ser
                   adicionado separadamente.
                 </>
               }
               obrigatorio
             />
-            <Button type="submit" carregando={adicionando} className="w-full sm:w-auto">
+            </div>
+            <Button type="submit" carregando={adicionando} className={styles.enviar}>
               Adicionar domínio
             </Button>
           </form>
-        </Card>
+        </Secao>
 
-        <section aria-labelledby="titulo-lista" className="space-y-3">
-          <h2 id="titulo-lista" ref={refTitulo} tabIndex={-1} className="text-lg font-bold">
-            Domínios aceitos
-          </h2>
+        <Secao id="titulo-lista" titulo="Domínios aceitos" tituloRef={refTitulo}>
           {aviso && (
             <Alert tom="sucesso" anunciar>
               <p>{aviso}</p>
@@ -134,33 +134,46 @@ export default function Dominios() {
           )}
           {dados && dados.length > 0 && (
             <>
-              <p className="text-sm text-ink-muted">
+              <p className={styles.nota}>
                 Só e-mails {dados.length === 1 ? "deste domínio podem" : `destes ${dados.length} domínios podem`} criar
                 conta e entrar.
               </p>
-              <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-surface">
-                {dados.map((d) => (
-                  <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
-                    <div className="min-w-0">
-                      <p className="break-all font-semibold">{d.dominio}</p>
-                      <p className="text-sm text-ink-muted">Adicionado em {formatarDataHora(d.criadoEm)}</p>
-                    </div>
-                    <Button
-                      variante="secondary"
-                      tamanho="sm"
-                      onClick={() => {
-                        setErroRemover(null);
-                        setRemover(d);
-                      }}
-                    >
-                      Remover<span className="sr-only"> o domínio {d.dominio}</span>
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+              <Tabela legenda="Domínios aceitos">
+                <thead>
+                  <tr>
+                    <th scope="col">Domínio</th>
+                    <th scope="col">Adicionado em</th>
+                    <th scope="col">
+                      <span className="sr-only">Ação</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dados.map((d) => (
+                    <tr key={d.id}>
+                      <td data-rotulo="Domínio" className={`${celula.principal} ${celula.semRotulo} ${styles.dominio}`}>
+                        {d.dominio}
+                      </td>
+                      <td data-rotulo="Adicionado em">{formatarDataHora(d.criadoEm)}</td>
+                      <td className={`${celula.acoes} ${celula.semRotulo}`}>
+                        <Button
+                          variante="danger-secondary"
+                          tamanho="sm"
+                          onClick={() => {
+                            setErroRemover(null);
+                            setRemover(d);
+                          }}
+                        >
+                          Remover<span className="sr-only"> o domínio {d.dominio}</span>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Tabela>
             </>
           )}
-        </section>
+        </Secao>
       </div>
 
       <ConfirmDialog
@@ -175,13 +188,13 @@ export default function Dominios() {
         rotuloCancelar="Manter domínio"
       >
         <p>
-          Contas com e-mail <span className="font-semibold text-ink">@{remover?.dominio}</span> deixam de entrar
+          Contas com e-mail <strong className={styles.escuro}>@{remover?.dominio}</strong> deixam de entrar
           imediatamente, inclusive quem estiver usando o sistema agora. Elas voltam a entrar se você adicionar o domínio
           de novo.
         </p>
         {ultimo && (
           <p>
-            Este é o último domínio da lista. Com a lista vazia, <strong className="text-ink">qualquer domínio</strong>{" "}
+            Este é o último domínio da lista. Com a lista vazia, <strong className={styles.escuro}>qualquer domínio</strong>{" "}
             passa a ser aceito.
           </p>
         )}

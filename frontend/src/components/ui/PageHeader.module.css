@@ -1,0 +1,33 @@
+.cabecalho {
+  margin-bottom: var(--esp-5);
+}
+
+.linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  padding-bottom: var(--esp-2);
+  border-bottom: 2px solid var(--verde-600);
+}
+
+.textos {
+  min-width: 0;
+  flex: 1 1 20rem;
+}
+
+.titulo {
+  overflow-wrap: anywhere;
+}
+
+.descricao {
+  margin-top: var(--esp-1);
+  color: var(--cinza-700);
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+}

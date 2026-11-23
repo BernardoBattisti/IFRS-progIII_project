@@ -10,8 +10,9 @@ import { validarNovaSenha } from "@/lib/senha";
 import { TelaPublica, classeLinkTexto } from "@/components/TelaPublica";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { InputField, SenhaField } from "@/components/ui/Field";
+import { InputField, SenhaField, classesEscolha as esc } from "@/components/ui/Field";
 import { cx } from "@/components/ui/cx";
+import styles from "@/components/FormPublico.module.css";
 
 type Escolha = "ALUNO" | "DOCENTE";
 type Campo = "nome" | "email" | "senha" | "confirmacao" | "matricula" | "papel";
@@ -108,7 +109,7 @@ export function Cadastro() {
     <TelaPublica
       titulo="Criar conta"
       descricao="Preencha seus dados para votar ou criar votações."
-      largura="max-w-lg"
+      largura="larga"
       rodape={
         <p>
           Já tem conta?{" "}
@@ -118,7 +119,7 @@ export function Cadastro() {
         </p>
       }
     >
-      <form onSubmit={enviar} className="space-y-5" noValidate>
+      <form onSubmit={enviar} className={styles.form} noValidate>
         <InputField
           id="cadastro-nome"
           rotulo="Nome completo"
@@ -173,21 +174,15 @@ export function Cadastro() {
           obrigatorio
         />
 
-        <fieldset className="space-y-2" aria-describedby={campos.papel ? "erro-papel" : undefined}>
-          <legend className="mb-2 text-sm font-semibold">
-            Você é <span className="font-normal text-ink-muted">(obrigatório)</span>
+        <fieldset className={esc.grupo} aria-describedby={campos.papel ? "erro-papel" : undefined}>
+          <legend className={esc.legenda}>
+            Você é <span className={esc.obrigatorio}>(obrigatório)</span>
           </legend>
+          <div className={styles.papeis}>
           {OPCOES.map((o) => (
             <label
               key={o.valor}
-              className={cx(
-                "flex cursor-pointer gap-3 rounded-[var(--radius-control)] border p-3 has-[:focus-visible]:outline has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-brand-700 has-[:focus-visible]:outline-offset-2",
-                papel === o.valor
-                  ? "border-2 border-brand-600 bg-brand-50"
-                  : campos.papel
-                    ? "border-2 border-danger-600 bg-surface"
-                    : "border-line-strong bg-surface",
-              )}
+              className={cx(esc.item, papel === o.valor ? esc.marcado : campos.papel ? esc.invalido : undefined)}
             >
               <input
                 type="radio"
@@ -195,16 +190,17 @@ export function Cadastro() {
                 value={o.valor}
                 checked={papel === o.valor}
                 onChange={() => { setPapel(o.valor); limpar("papel"); }}
-                className="mt-1 size-5 accent-brand-600 focus-visible:outline-none"
+                className={esc.controle}
               />
               <span>
-                <span className="block font-semibold text-ink">{o.titulo}</span>
-                <span className="block text-sm text-ink-muted">{o.texto}</span>
+                <span className={esc.titulo}>{o.titulo}</span>
+                <span className={esc.texto}>{o.texto}</span>
               </span>
             </label>
           ))}
+          </div>
           {campos.papel && (
-            <p id="erro-papel" className="text-sm font-medium text-danger-600">
+            <p id="erro-papel" className={esc.erro}>
               <span aria-hidden="true">✕ </span>
               {campos.papel}
             </p>
@@ -227,7 +223,7 @@ export function Cadastro() {
           </Alert>
         )}
 
-        <Button type="submit" className="w-full" carregando={enviando}>
+        <Button type="submit" bloco carregando={enviando}>
           Criar conta
         </Button>
       </form>

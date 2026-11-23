@@ -1,0 +1,130 @@
+.form > * + * {
+  margin-top: var(--esp-4);
+}
+
+.resumo:empty {
+  display: none;
+}
+
+.listaErros {
+  list-style: disc;
+  padding-left: var(--esp-5);
+}
+
+.duasColunas {
+  display: grid;
+  gap: var(--esp-4);
+}
+
+@media (min-width: 640px) {
+  .duasColunas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 40rem;
+  }
+
+  .campoCurto {
+    max-width: 12rem;
+  }
+}
+
+.ajuda {
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}
+
+.escuro {
+  color: var(--cinza-900);
+}
+
+.carregando {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}
+
+.turmas {
+  margin-top: var(--esp-3);
+}
+
+.opcoes > * + * {
+  margin-top: var(--esp-3);
+}
+
+.opcao {
+  border: 1px solid var(--cinza-400);
+  border-left: 4px solid var(--verde-600);
+  background: var(--branco);
+  padding: var(--esp-3);
+}
+
+.opcao > * + * {
+  margin-top: var(--esp-3);
+}
+
+.opcaoCabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-2);
+  padding-bottom: var(--esp-2);
+  border-bottom: 1px solid var(--cinza-200);
+}
+
+.opcaoTitulo {
+  font-size: 1rem;
+}
+
+.opcaoAcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-1);
+}
+
+.imagemBloco > * + * {
+  margin-top: var(--esp-2);
+}
+
+.rotuloImagem {
+  font-size: var(--texto-p);
+  font-weight: 700;
+}
+
+.previa {
+  width: 100%;
+  max-width: 16rem;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--cinza-400);
+  background: var(--cinza-200);
+  object-fit: cover;
+}
+
+.botoesImagem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+.rodape {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--esp-2);
+  padding: var(--esp-3);
+  border: 1px solid var(--cinza-400);
+  background: var(--cinza-200);
+}
+
+@media (min-width: 640px) {
+  .rodape {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+.notaRodape {
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}

@@ -1,0 +1,33 @@
+.detalhe {
+  display: block;
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}
+
+.data {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 640px) {
+  .data {
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 640px) {
+  .colSituacao {
+    width: 7.5rem;
+  }
+
+  .colData {
+    width: 11.5rem;
+  }
+
+  .colExtra {
+    width: 11rem;
+  }
+
+  .colAcao {
+    width: 9.5rem;
+  }
+}

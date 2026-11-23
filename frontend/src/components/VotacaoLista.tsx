@@ -1,47 +1,89 @@
-import Link from "next/link";
+import type { ReactNode } from "react";
 import type { Votacao } from "@/lib/types";
 import { formatarDataHora, plural } from "@/lib/format";
 import { EstadoBadge } from "./ui/Badge";
+import { LinkBotao, type Variante } from "./ui/Button";
+import { Tabela, celula } from "./ui/Tabela";
+import styles from "./VotacaoLista.module.css";
 
 export function periodo(v: Votacao) {
   return `${formatarDataHora(v.inicio)} até ${formatarDataHora(v.fim)}`;
 }
 
-export function VotacaoItem({
-  v,
-  href,
+type Acao = { rotulo: string; variante?: Variante };
+
+/**
+ * Tabela de votações: título, situação, início, fim, detalhes e ação por linha.
+ * `extra` acrescenta uma coluna (ex.: votos restantes do aluno).
+ */
+export function TabelaVotacoes({
+  legenda,
+  lista,
+  hrefDe,
+  acaoDe,
   extra,
-  nivel = "h3",
 }: {
-  v: Votacao;
-  href: string;
-  extra?: React.ReactNode;
-  nivel?: "h2" | "h3";
+  legenda: string;
+  lista: Votacao[];
+  hrefDe: (v: Votacao) => string;
+  acaoDe: (v: Votacao) => Acao;
+  extra?: { titulo: string; valor: (v: Votacao) => ReactNode };
 }) {
-  const Titulo = nivel;
   return (
-    <li>
-      <Link
-        href={href}
-        className="block rounded-[var(--radius-card)] border border-line bg-surface p-4 shadow-[var(--shadow-card)] transition-colors hover:border-brand-500"
-      >
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <Titulo className="min-w-0 break-words text-lg font-semibold text-ink">{v.titulo}</Titulo>
-          <EstadoBadge estado={v.estado} />
-        </div>
-        <p className="mt-1 text-sm text-ink-muted">
-          {v.estado === "AGENDADA" ? "Abre em " + formatarDataHora(v.inicio) : null}
-          {v.estado === "ABERTA" ? "Encerra em " + formatarDataHora(v.fim) : null}
-          {v.estado === "ENCERRADA" ? "Encerrou em " + formatarDataHora(v.fim) : null}
-          {v.estado === "RASCUNHO" ? periodo(v) : null}
-        </p>
-        <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-ink-muted">
-          <span>{plural(v.opcoes.length, "opção", "opções")}</span>
-          <span aria-hidden="true">·</span>
-          <span>{v.anonima ? "Anônima" : "Identificada"}</span>
-          {extra}
-        </p>
-      </Link>
-    </li>
+    <Tabela legenda={legenda}>
+      <thead>
+        <tr>
+          <th scope="col">Votação</th>
+          <th scope="col" className={styles.colSituacao}>
+            Situação
+          </th>
+          <th scope="col" className={styles.colData}>
+            Início
+          </th>
+          <th scope="col" className={styles.colData}>
+            Fim
+          </th>
+          {extra && (
+            <th scope="col" className={styles.colExtra}>
+              {extra.titulo}
+            </th>
+          )}
+          <th scope="col" className={styles.colAcao}>
+            <span className="sr-only">Ação</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {lista.map((v) => {
+          const a = acaoDe(v);
+          return (
+            <tr key={v.id}>
+              <td data-rotulo="Votação" className={celula.semRotulo}>
+                <span className={celula.principal}>{v.titulo}</span>
+                <span className={styles.detalhe}>
+                  {plural(v.opcoes.length, "opção", "opções")} · {v.anonima ? "Anônima" : "Identificada"}
+                </span>
+              </td>
+              <td data-rotulo="Situação">
+                <EstadoBadge estado={v.estado} />
+              </td>
+              <td data-rotulo="Início" className={styles.data}>
+                {formatarDataHora(v.inicio)}
+              </td>
+              <td data-rotulo="Fim" className={styles.data}>
+                {formatarDataHora(v.fim)}
+              </td>
+              {extra && <td data-rotulo={extra.titulo}>{extra.valor(v)}</td>}
+              <td className={`${celula.acoes} ${celula.semRotulo}`}>
+                <LinkBotao href={hrefDe(v)} variante={a.variante ?? "secondary"} tamanho="sm">
+                  {a.rotulo}
+                  <span className="sr-only">: {v.titulo}</span>
+                </LinkBotao>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </Tabela>
   );
 }

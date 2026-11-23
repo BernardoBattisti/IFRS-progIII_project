@@ -8,9 +8,10 @@ import { isoParaLocal, localParaIso } from "@/lib/format";
 import type { Turma, Visibilidade, Votacao, VotacaoInput } from "@/lib/types";
 import { useDados } from "@/lib/useDados";
 import { Alert } from "./ui/Alert";
-import { Button, classeBotao } from "./ui/Button";
-import { Card } from "./ui/Card";
-import { InputField, SelectField, TextareaField } from "./ui/Field";
+import { Button, LinkBotao } from "./ui/Button";
+import { Secao } from "./ui/Card";
+import { InputField, SelectField, TextareaField, classesEscolha as esc } from "./ui/Field";
+import styles from "./VotacaoForm.module.css";
 import { Spinner } from "./ui/Spinner";
 import { cx } from "./ui/cx";
 import { ROTULO_VISIBILIDADE } from "./RegrasVotacao";
@@ -217,12 +218,12 @@ export function VotacaoForm({ inicial }: { inicial?: Votacao }) {
   const listaErros = Object.entries(campos);
 
   return (
-    <form onSubmit={salvar} noValidate className="space-y-6">
-      <div ref={resumoRef} tabIndex={-1} className="space-y-2 focus:outline-none">
+    <form onSubmit={salvar} noValidate className={styles.form}>
+      <div ref={resumoRef} tabIndex={-1} className={styles.resumo}>
         {(erro || listaErros.length > 0) && (
           <Alert tom="erro" titulo={erro ?? "Revise os campos abaixo"} anunciar>
             {listaErros.length > 0 && (
-              <ul className="list-disc space-y-0.5 pl-5">
+              <ul className={styles.listaErros}>
                 {listaErros.map(([k, msg]) => (
                   <li key={k}>
                     <a href={`#${idDoCampo(k)}`}>
@@ -236,8 +237,7 @@ export function VotacaoForm({ inicial }: { inicial?: Votacao }) {
         )}
       </div>
 
-      <Card className="space-y-4">
-        <h2 className="text-lg font-bold">Informações</h2>
+      <Secao id="secao-informacoes" titulo="Informações" variante="form">
         <InputField
           id={idDoCampo("titulo")}
           rotulo="Título"
@@ -256,14 +256,10 @@ export function VotacaoForm({ inicial }: { inicial?: Votacao }) {
           ajuda="Explique o que está sendo decidido. Opcional."
           rows={4}
         />
-      </Card>
+      </Secao>
 
-      <Card className="space-y-4">
-        <div>
-          <h2 className="text-lg font-bold">Período</h2>
-          <p className="text-sm text-ink-muted">Datas e horários no fuso do seu dispositivo.</p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+      <Secao id="secao-periodo" titulo="Período" variante="form" descricao="Datas e horários no fuso do seu dispositivo.">
+        <div className={styles.duasColunas}>
           <InputField
             id={idDoCampo("inicio")}
             rotulo="Início"
@@ -284,11 +280,10 @@ export function VotacaoForm({ inicial }: { inicial?: Votacao }) {
             obrigatorio
           />
         </div>
-      </Card>
+      </Secao>
 
-      <Card className="space-y-5">
-        <h2 className="text-lg font-bold">Regras</h2>
-        <div className="sm:w-48">
+      <Secao id="secao-regras" titulo="Regras" variante="form">
+        <div className={styles.campoCurto}>
           <InputField
             id={idDoCampo("votosPorAluno")}
             rotulo="Votos por aluno"
@@ -354,42 +349,42 @@ export function VotacaoForm({ inicial }: { inicial?: Votacao }) {
             </option>
           ))}
         </SelectField>
-      </Card>
+      </Secao>
 
-      <Card className="space-y-3">
+      <Secao id="secao-turmas" titulo="Quem pode votar" variante="form">
         <fieldset
           id={idDoCampo("turmaIds")}
           tabIndex={-1}
           aria-describedby="ajuda-turmas"
-          className="space-y-3"
+          className={esc.grupo}
         >
-          <legend className="text-lg font-bold">Quem pode votar</legend>
-          <p id="ajuda-turmas" className="text-sm text-ink-muted">
-            Marque as turmas participantes. <strong className="text-ink">Sem nenhuma turma marcada, todos os alunos
+          <legend className="sr-only">Quem pode votar</legend>
+          <p id="ajuda-turmas" className={styles.ajuda}>
+            Marque as turmas participantes. <strong className={styles.escuro}>Sem nenhuma turma marcada, todos os alunos
             ativos do sistema podem votar.</strong>
           </p>
           {turmas.carregando && (
-            <p role="status" className="flex items-center gap-2 text-sm text-ink-muted">
-              <Spinner className="size-4" /> Carregando suas turmas…
+            <p role="status" className={styles.carregando}>
+              <Spinner pequeno /> Carregando suas turmas…
             </p>
           )}
           {turmas.erro && <Alert tom="erro">{turmas.erro}</Alert>}
           {turmas.dados && turmas.dados.length === 0 && (
-            <p className="text-sm text-ink-muted">
+            <p className={styles.ajuda}>
               Você ainda não criou turmas.{" "}
-              <Link href="/docente/turmas" className="font-semibold text-brand-700 underline">
+              <Link href="/docente/turmas">
                 Criar uma turma
               </Link>
             </p>
           )}
           {turmas.dados && turmas.dados.length > 0 && (
-            <ul className="grid gap-2 sm:grid-cols-2">
+            <ul className={cx(esc.lista, styles.turmas)}>
               {turmas.dados.map((t) => (
                 <li key={t.id}>
-                  <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-[var(--radius-control)] border border-line-strong px-3 py-2 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50">
+                  <label className={cx(esc.item, turmaIds.has(t.id) && esc.marcado)}>
                     <input
                       type="checkbox"
-                      className="size-5 shrink-0 accent-brand-600"
+                      className={esc.controle}
                       checked={turmaIds.has(t.id)}
                       onChange={(e) =>
                         setTurmaIds((s) => {
@@ -400,9 +395,9 @@ export function VotacaoForm({ inicial }: { inicial?: Votacao }) {
                         })
                       }
                     />
-                    <span className="min-w-0 break-words">
+                    <span>
                       {t.nome}{" "}
-                      <span className="text-sm text-ink-muted">
+                      <span className={styles.ajuda}>
                         ({t.totalAlunos} {t.totalAlunos === 1 ? "aluno" : "alunos"})
                       </span>
                     </span>
@@ -411,17 +406,16 @@ export function VotacaoForm({ inicial }: { inicial?: Votacao }) {
               ))}
             </ul>
           )}
-          {campos.turmaIds && <p className="text-sm font-medium text-danger-600"><span aria-hidden="true">✕ </span>{campos.turmaIds}</p>}
+          {campos.turmaIds && <p className={esc.erro}><span aria-hidden="true">✕ </span>{campos.turmaIds}</p>}
         </fieldset>
-      </Card>
+      </Secao>
 
-      <Card className="space-y-4">
+      <Secao id="secao-opcoes" titulo="Opções" variante="form">
         <div id={idDoCampo("opcoes")} tabIndex={-1}>
-          <h2 className="text-lg font-bold">Opções</h2>
-          <p className="text-sm text-ink-muted">Para publicar, são necessárias pelo menos 2 opções (máximo de 50).</p>
-          {campos.opcoes && <p className="mt-1 text-sm font-medium text-danger-600"><span aria-hidden="true">✕ </span>{campos.opcoes}</p>}
+          <p className={styles.ajuda}>Para publicar, são necessárias pelo menos 2 opções (máximo de 50).</p>
+          {campos.opcoes && <p className={esc.erro}><span aria-hidden="true">✕ </span>{campos.opcoes}</p>}
         </div>
-        <ol className="space-y-4">
+        <ol className={styles.opcoes}>
           {opcoes.map((o, i) => (
             <OpcaoEditor
               key={o.chave}
@@ -441,22 +435,19 @@ export function VotacaoForm({ inicial }: { inicial?: Votacao }) {
             + Adicionar opção
           </Button>
         ) : (
-          <p className="text-sm text-ink-muted">Você chegou ao limite de {MAX_OPCOES} opções por votação.</p>
+          <p className={styles.ajuda}>Você chegou ao limite de {MAX_OPCOES} opções por votação.</p>
         )}
-      </Card>
+      </Secao>
 
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Link
-          href={editando ? `/docente/votacoes/${inicial!.id}` : "/docente"}
-          className={classeBotao("secondary")}
-        >
+      <div className={styles.rodape}>
+        <LinkBotao href={editando ? `/docente/votacoes/${inicial!.id}` : "/docente"} variante="secondary">
           Cancelar
-        </Link>
+        </LinkBotao>
         <Button type="submit" carregando={salvando}>
           {editando ? "Salvar alterações" : "Salvar rascunho"}
         </Button>
       </div>
-      <p className="text-right text-sm text-ink-muted">
+      <p className={styles.notaRodape}>
         A votação fica como rascunho, invisível para os alunos, até você publicar.
       </p>
     </form>
@@ -480,33 +471,27 @@ function Escolha({
 }) {
   const nome = useId();
   return (
-    <fieldset id={id} tabIndex={-1} className="space-y-2">
-      <legend className="mb-2 text-sm font-semibold">{legenda}</legend>
-      <div className="grid gap-2 sm:grid-cols-2">
+    <fieldset id={id} tabIndex={-1} className={esc.grupo}>
+      <legend className={esc.legenda}>{legenda}</legend>
+      <div className={esc.lista}>
         {opcoes.map((o) => (
-          <label
-            key={o.valor}
-            className={cx(
-              "flex cursor-pointer gap-3 rounded-[var(--radius-control)] border p-3",
-              valor === o.valor ? "border-2 border-brand-600 bg-brand-50" : "border-line-strong",
-            )}
-          >
+          <label key={o.valor} className={cx(esc.item, valor === o.valor && esc.marcado)}>
             <input
               type="radio"
               name={nome}
               value={o.valor}
               checked={valor === o.valor}
               onChange={() => aoMudar(o.valor)}
-              className="mt-0.5 size-5 shrink-0 accent-brand-600"
+              className={esc.controle}
             />
             <span>
-              <span className="block font-semibold">{o.rotulo}</span>
-              <span className="block text-sm text-ink-muted">{o.ajuda}</span>
+              <span className={esc.titulo}>{o.rotulo}</span>
+              <span className={esc.texto}>{o.ajuda}</span>
             </span>
           </label>
         ))}
       </div>
-      {erro && <p className="text-sm font-medium text-danger-600"><span aria-hidden="true">✕ </span>{erro}</p>}
+      {erro && <p className={esc.erro}><span aria-hidden="true">✕ </span>{erro}</p>}
     </fieldset>
   );
 }
@@ -535,12 +520,12 @@ function OpcaoEditor({
   const idArquivo = useId();
   const erroImagem = o.erroImagem ?? campos[`opcoes[${indice}].imagemUrl`];
   return (
-    <li className="space-y-3 rounded-[var(--radius-control)] border border-line bg-canvas p-3 sm:p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-semibold">Opção {n}</h3>
-        <div className="flex gap-1">
+    <li className={styles.opcao}>
+      <div className={styles.opcaoCabecalho}>
+        <h3 className={styles.opcaoTitulo}>Opção {n}</h3>
+        <div className={styles.opcaoAcoes}>
           <Button
-            variante="ghost"
+            variante="secondary"
             tamanho="sm"
             onClick={() => aoMover(-1)}
             disabled={indice === 0}
@@ -549,7 +534,7 @@ function OpcaoEditor({
             ↑
           </Button>
           <Button
-            variante="ghost"
+            variante="secondary"
             tamanho="sm"
             onClick={() => aoMover(1)}
             disabled={indice === total - 1}
@@ -557,7 +542,7 @@ function OpcaoEditor({
           >
             ↓
           </Button>
-          <Button variante="ghost" tamanho="sm" onClick={aoRemover} className="text-danger-600 hover:bg-danger-50">
+          <Button variante="danger-secondary" tamanho="sm" onClick={aoRemover}>
             Remover<span className="sr-only"> opção {n}</span>
           </Button>
         </div>
@@ -580,22 +565,24 @@ function OpcaoEditor({
         rows={2}
         ajuda="Opcional."
       />
-      <div id={idDoCampo(`opcoes[${indice}].imagemUrl`)} tabIndex={-1} className="space-y-2">
-        <p className="text-sm font-semibold">Imagem da opção {n} <span className="font-normal text-ink-muted">(opcional)</span></p>
+      <div id={idDoCampo(`opcoes[${indice}].imagemUrl`)} tabIndex={-1} className={styles.imagemBloco}>
+        <p className={styles.rotuloImagem}>
+          Imagem da opção {n} <span className={esc.obrigatorio}>(opcional)</span>
+        </p>
         {o.imagemUrl && (
           <img
             src={o.imagemUrl}
             alt={`Prévia da imagem da opção ${n}`}
-            className="aspect-video w-full max-w-xs rounded-[var(--radius-control)] border border-line bg-track object-cover"
+            className={styles.previa}
           />
         )}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={styles.botoesImagem}>
           <input
             ref={arquivoRef}
             id={idArquivo}
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            className="hidden"
+            hidden
             tabIndex={-1}
             aria-label={`Arquivo de imagem da opção ${n}`}
             onChange={(e) => {
@@ -619,11 +606,9 @@ function OpcaoEditor({
             </Button>
           )}
         </div>
-        <p className="text-sm text-ink-muted">
-          JPEG, PNG ou WebP, até 5 MB.
-        </p>
+        <p className={styles.ajuda}>JPEG, PNG ou WebP, até 5 MB.</p>
         {erroImagem && (
-          <p role="alert" className="text-sm font-medium text-danger-600">
+          <p role="alert" className={esc.erro}>
             <span aria-hidden="true">✕ </span>{erroImagem}
           </p>
         )}

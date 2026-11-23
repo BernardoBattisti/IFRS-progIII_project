@@ -1,0 +1,9 @@
+.bloco {
+  margin-bottom: var(--esp-5);
+}
+
+.descricao {
+  display: block;
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}

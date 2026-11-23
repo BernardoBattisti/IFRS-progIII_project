@@ -8,6 +8,7 @@ import type { Papel, Usuario } from "@/lib/types";
 import { Carregando } from "./ui/Spinner";
 import { Alert } from "./ui/Alert";
 import { Button } from "./ui/Button";
+import styles from "./Sessao.module.css";
 
 type Ctx = { usuario: Usuario; sair: () => Promise<void> };
 const SessaoContext = createContext<Ctx | null>(null);
@@ -80,12 +81,12 @@ export function Protegido({
 
   if (erro) {
     return (
-      <main className="mx-auto max-w-lg p-4 pt-16">
+      <main id="conteudo" tabIndex={-1} className={styles.erro}>
         <Alert tom="erro" titulo="Não foi possível carregar sua conta" anunciar>
           <p>{erro}</p>
         </Alert>
         <Button
-          className="mt-4"
+          className={styles.botao}
           variante="secondary"
           onClick={() => {
             setErro(null);

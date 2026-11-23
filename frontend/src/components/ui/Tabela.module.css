@@ -1,0 +1,147 @@
+.tabela {
+  background: var(--branco);
+  border: 1px solid var(--cinza-400);
+  font-size: var(--texto-p);
+}
+
+.legenda {
+  caption-side: top;
+  text-align: left;
+  padding-bottom: var(--esp-2);
+  font-weight: 700;
+}
+
+.tabela th,
+.tabela td {
+  border: 1px solid var(--cinza-400);
+  padding: var(--esp-2) var(--esp-3);
+  vertical-align: top;
+}
+
+.tabela thead th {
+  background: var(--cinza-200);
+  font-weight: 700;
+  color: var(--cinza-900);
+  border-bottom: 2px solid var(--cinza-600);
+  white-space: nowrap;
+}
+
+.tabela tbody tr:nth-child(even) {
+  background: var(--cinza-50);
+}
+
+.principal {
+  font-weight: 700;
+  font-size: var(--texto-m);
+}
+
+.auxiliar {
+  color: var(--cinza-700);
+}
+
+.numero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tabela thead th.numero {
+  text-align: right;
+}
+
+.acoes {
+  white-space: nowrap;
+}
+
+.acoes > * + * {
+  margin-left: var(--esp-2);
+}
+
+.acoes > div {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+}
+
+/* Celular: linhas viram blocos empilhados, sem rolagem horizontal. */
+@media (max-width: 639px) {
+  .tabela,
+  .tabela tbody,
+  .tabela tr,
+  .tabela td {
+    display: block;
+    width: 100%;
+  }
+
+  .tabela {
+    border: 0;
+    background: transparent;
+  }
+
+  .tabela thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .tabela tbody tr,
+  .tabela tbody tr:nth-child(even) {
+    background: var(--branco);
+    border: 1px solid var(--cinza-400);
+    border-top: 3px solid var(--verde-600);
+    border-radius: var(--raio);
+    padding: var(--esp-2) var(--esp-3);
+  }
+
+  .tabela tbody tr + tr {
+    margin-top: var(--esp-3);
+  }
+
+  .tabela td {
+    border: 0;
+    border-bottom: 1px solid var(--cinza-200);
+    padding: var(--esp-1) 0;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .tabela td:last-child {
+    border-bottom: 0;
+  }
+
+  .tabela td[data-rotulo]:not(.semRotulo) {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 34%) minmax(0, 1fr);
+    column-gap: var(--esp-3);
+    align-items: baseline;
+    justify-items: start;
+  }
+
+  .tabela td[data-rotulo]::before {
+    content: attr(data-rotulo);
+    font-size: var(--texto-pp);
+    font-weight: 700;
+    color: var(--cinza-700);
+  }
+
+  .tabela td.semRotulo::before {
+    display: none;
+  }
+
+  .numero {
+    text-align: left;
+  }
+
+  .acoes > div,
+  .tabela td.acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--esp-2);
+  }
+
+  .acoes > * + * {
+    margin-left: 0;
+  }
+}

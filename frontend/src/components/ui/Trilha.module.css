@@ -1,0 +1,39 @@
+.trilha {
+  margin-bottom: var(--esp-3);
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}
+
+.trilha ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.trilha li {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.trilha a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo);
+}
+
+@media (min-width: 640px) {
+  .trilha a {
+    min-height: 0;
+  }
+}
+
+.trilha [aria-current] {
+  color: var(--cinza-900);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.sep {
+  padding: 0 var(--esp-2);
+}

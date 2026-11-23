@@ -1,9 +1,10 @@
 import { Alert } from "./ui/Alert";
 import { Button } from "./ui/Button";
+import styles from "./ErroCarregar.module.css";
 
 export function ErroCarregar({ mensagem, aoTentar }: { mensagem: string; aoTentar?: () => void }) {
   return (
-    <div className="space-y-3">
+    <div className={styles.erro}>
       <Alert tom="erro" titulo="Não foi possível carregar" anunciar>
         <p>{mensagem}</p>
       </Alert>

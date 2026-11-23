@@ -1,79 +1,205 @@
-@import "tailwindcss";
-
 /*
- * Tokens do design system (ver DESIGN.md).
- * Todos os pares texto/fundo usados aqui foram conferidos para WCAG 2.1 AA.
+ * Base global: reset, tokens e elementos nativos. Estilos de componentes ficam
+ * nos *.module.css ao lado de cada componente. Contrastes em DESIGN.md.
  */
-@theme {
-  /* Marca — verde institucional. 500 é o tom da marca (#2F9E41), usado só em
-     elementos decorativos/grandes; texto e botões usam 600+ (contraste AA). */
-  --color-brand-50: #eaf6ec;
-  --color-brand-100: #d3edd7;
-  --color-brand-200: #a9dbb1;
-  --color-brand-500: #2f9e41;
-  --color-brand-600: #237a32; /* botão primário / links — 5,38:1 com branco */
-  --color-brand-700: #1e6b2b; /* hover — 6,58:1 */
-  --color-brand-800: #1b5e27; /* pressionado — 7,84:1 */
 
-  /* Vermelho da marca — apoio pontual (faixa do cabeçalho). Nunca usado
-     para erro ou ação destrutiva, para não confundir significado. */
-  --color-accent-red: #cd191e;
+:root {
+  /* Verde institucional (escuro e fechado) */
+  --verde-900: #143a20; /* barra de navegação — branco 12,68:1 */
+  --verde-800: #1d4f2c; /* faixa do cabeçalho — branco 9,52:1 */
+  --verde-700: #174f27; /* hover — branco 9,61:1 */
+  --verde-600: #1f6a34; /* primário, links — branco 6,63:1 */
+  --verde-100: #e8f1ea; /* seleção / sucesso */
+  --verde-claro-texto: #d9e6dc; /* texto secundário sobre a faixa — 7,39:1 */
 
   /* Neutros */
-  --color-ink: #1d2939; /* texto principal — 14,7:1 */
-  --color-ink-muted: #475467; /* texto secundário — 7,69:1 */
-  --color-ink-subtle: #667085; /* texto auxiliar — 4,97:1 */
-  --color-line: #d0d5dd; /* divisórias (decorativas) */
-  --color-line-strong: #7a8599; /* borda de campos — 3,72:1 (1.4.11) */
-  --color-canvas: #f6f8f7; /* fundo da página */
-  --color-surface: #ffffff; /* cartões */
-  --color-track: #e4e7ec; /* trilho das barras de resultado */
+  --cinza-900: #1b1d1b; /* texto — 16,96:1 */
+  --cinza-700: #4a4f4a; /* texto secundário — 8,37:1 */
+  --cinza-600: #6b716b; /* borda de campos — 5,00:1 (4,50:1 sobre cinza-100) */
+  --cinza-400: #b9bfb9; /* bordas de tabela (estrutura) */
+  --cinza-200: #e4e7e4; /* cabeçalho de tabela, faixas */
+  --cinza-100: #f2f3f2; /* caixas de formulário */
+  --cinza-50: #f7f8f7; /* linhas zebradas */
+  --branco: #ffffff;
 
   /* Semânticas */
-  --color-danger-50: #fef3f2;
-  --color-danger-200: #fecdca;
-  --color-danger-600: #b42318; /* 6,57:1 com branco; 6,05:1 sobre danger-50 */
-  --color-danger-700: #912018;
-  --color-warning-50: #fffaeb;
-  --color-warning-200: #fedf89;
-  --color-warning-700: #93370d; /* 7,21:1 sobre warning-50 */
-  --color-info-50: #eff8ff;
-  --color-info-200: #b2ddff;
-  --color-info-700: #175cd3; /* 5,57:1 sobre info-50 */
-  --color-success-50: #eaf6ec;
-  --color-success-700: #1e6b2b;
+  --vermelho-800: #8a1b16;
+  --vermelho-700: #a3201a; /* só erro/destrutivo — 7,56:1 */
+  --vermelho-100: #fbeceb;
+  --amarelo-800: #6b4500;
+  --amarelo-700: #8a5a00;
+  --amarelo-100: #fff5d6;
+  --azul-800: #1d4a73;
+  --azul-100: #e9f0f7;
 
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    "Noto Sans", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  /* Foco */
+  --foco: #b35400; /* âmbar — 5,02:1 sobre branco */
+  --foco-escuro: #ffd84d; /* sobre a faixa verde — 6,88:1 */
 
-  --radius-card: 0.75rem;
-  --radius-control: 0.5rem;
+  /* Tipografia */
+  --fonte-serifa: var(--fonte-serifa-carregada, "Source Serif 4"), Georgia, "Times New Roman", serif;
+  --fonte-texto: Arial, "Segoe UI", Helvetica, "Liberation Sans", sans-serif;
+  --fonte-mono: "Courier New", Consolas, "Liberation Mono", monospace;
+  --texto-pp: 0.8125rem;
+  --texto-p: 0.875rem;
+  --texto-m: 1rem;
 
-  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.08);
-  --shadow-overlay: 0 12px 32px rgb(16 24 40 / 0.18);
+  /* Espaço, bordas */
+  --esp-1: 0.25rem;
+  --esp-2: 0.5rem;
+  --esp-3: 0.75rem;
+  --esp-4: 1rem;
+  --esp-5: 1.5rem;
+  --esp-6: 2rem;
+  --largura: 64rem;
+  --raio: 2px;
+  --alvo: 2.75rem; /* 44px */
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
 }
 
 html {
   -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  height: 100%;
 }
 
 body {
-  background: var(--color-canvas);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--branco);
+  color: var(--cinza-900);
+  font-family: var(--fonte-texto);
+  font-size: var(--texto-m);
+  line-height: 1.5;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+p,
+h1,
+h2,
+h3,
+dd,
+li,
+td,
+th {
+  overflow-wrap: break-word;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--fonte-serifa);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--cinza-900);
+}
+
+h1 {
+  font-size: 1.625rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+h3 {
+  font-size: 1.0625rem;
+}
+
+@media (max-width: 639px) {
+  h1 {
+    font-size: 1.375rem;
+  }
+}
+
+a {
+  color: var(--verde-600);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--verde-700);
+  text-decoration-thickness: 2px;
+}
+
+strong,
+b {
+  font-weight: 700;
+}
+
+code {
+  font-family: var(--fonte-mono);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th {
+  text-align: left;
+}
+
+summary {
+  cursor: pointer;
 }
 
 /* Foco sempre visível e consistente (2.4.7). */
 :focus-visible {
-  outline: 3px solid var(--color-brand-700);
+  outline: 3px solid var(--foco);
   outline-offset: 2px;
-  border-radius: 2px;
+}
+
+[tabindex="-1"]:focus:not(:focus-visible) {
+  outline: none;
 }
 
 dialog::backdrop {
-  background: rgb(16 24 40 / 0.55);
+  background: rgb(20 24 20 / 0.6);
+}
+
+/* Utilitário de acessibilidade: visível só para leitores de tela. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

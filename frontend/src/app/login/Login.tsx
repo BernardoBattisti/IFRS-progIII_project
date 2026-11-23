@@ -10,6 +10,7 @@ import { TelaPublica, classeLinkTexto } from "@/components/TelaPublica";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { InputField, SenhaField } from "@/components/ui/Field";
+import styles from "@/components/FormPublico.module.css";
 
 const MSG_DOMINIO_PADRAO = "O domínio do seu e-mail deixou de ser aceito por este sistema.";
 
@@ -117,7 +118,7 @@ export function Login() {
           <p>Se precisar de acesso, procure a coordenação do sistema no seu campus.</p>
         </Alert>
       )}
-      <form onSubmit={entrar} className="space-y-4" noValidate>
+      <form onSubmit={entrar} className={styles.form} noValidate>
         <InputField
           ref={refEmail}
           rotulo="E-mail"
@@ -131,7 +132,7 @@ export function Login() {
           erro={campos.email}
           obrigatorio
         />
-        <div className="space-y-1">
+        <div className={styles.grupo}>
           <SenhaField
             id="login-senha"
             rotulo="Senha"
@@ -141,7 +142,7 @@ export function Login() {
             erro={campos.senha}
             obrigatorio
           />
-          <p className="text-right text-sm">
+          <p className={styles.linkSenha}>
             <Link href="/esqueci-senha" className={classeLinkTexto}>
               Esqueci minha senha
             </Link>
@@ -153,7 +154,7 @@ export function Login() {
             {falha.dica && <p>{falha.dica}</p>}
           </Alert>
         )}
-        <Button type="submit" className="w-full" carregando={enviando}>
+        <Button type="submit" bloco carregando={enviando}>
           Entrar
         </Button>
       </form>

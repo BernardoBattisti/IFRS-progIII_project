@@ -1,7 +1,6 @@
 "use client";
 
 import { useTitulo } from "@/lib/useTitulo";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { api, mensagemDeErro } from "@/lib/api";
@@ -18,6 +17,10 @@ import { ConfirmDialog } from "@/components/ui/Dialog";
 import { Resultados } from "@/components/Resultados";
 import { RegrasVotacao } from "@/components/RegrasVotacao";
 import { cx } from "@/components/ui/cx";
+import { Trilha } from "@/components/ui/Trilha";
+import { Secao } from "@/components/ui/Card";
+import { classesEscolha as esc } from "@/components/ui/Field";
+import styles from "./page.module.css";
 
 type Selecao = Record<number, number>;
 
@@ -33,9 +36,7 @@ export default function VotacaoAluno() {
 
   return (
     <>
-      <Link href="/aluno" className="mb-4 inline-flex min-h-11 items-center font-semibold text-brand-700 hover:underline">
-        <span aria-hidden="true">←&nbsp;</span>Voltar para votações
-      </Link>
+      {!v && <Trilha itens={[{ rotulo: "Votações", href: "/aluno" }, { rotulo: "Votação" }]} />}
       {carregando && !v && <Carregando texto="Carregando votação…" />}
       {erro && !v && (
         <ErroCarregar mensagem={erro} aoTentar={status === 404 || status === 403 ? undefined : recarregar} />
@@ -54,16 +55,17 @@ function Conteudo({ v, aoAtualizar }: { v: Votacao; aoAtualizar: (v: Votacao) =>
   return (
     <>
       <PageHeader
+        antes={<Trilha itens={[{ rotulo: "Votações", href: "/aluno" }, { rotulo: v.titulo }]} />}
         titulo={v.titulo}
         descricao={
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <div className={styles.meta}>
             <EstadoBadge estado={v.estado} />
             <span>Criada por {v.docente.nome}</span>
           </div>
         }
       />
-      <div className="space-y-6">
-        {v.descricao && <p className="max-w-prose whitespace-pre-line break-words">{v.descricao}</p>}
+      <div className={styles.pilha}>
+        {v.descricao && <p className={styles.descricao}>{v.descricao}</p>}
 
         <RegrasVotacao v={v} />
 
@@ -119,7 +121,7 @@ function Conteudo({ v, aoAtualizar }: { v: Votacao; aoAtualizar: (v: Votacao) =>
           <Resultados votacao={v} />
         ) : (
           v.estado !== "AGENDADA" && (
-            <p className="rounded-[var(--radius-control)] border border-line bg-surface p-3 text-sm text-ink-muted">
+            <p className={styles.semResultado}>
               {v.visibilidadeResultado === "NUNCA"
                 ? "O docente optou por não divulgar o resultado desta votação aos alunos."
                 : "O resultado aparece aqui quando a votação encerrar."}
@@ -157,7 +159,7 @@ function ImagemOpcao({ o }: { o: Opcao }) {
       src={o.imagemUrl}
       alt=""
       loading="lazy"
-      className="aspect-video w-full rounded-[var(--radius-control)] border border-line bg-track object-cover"
+      className={styles.imagem}
     />
   );
 }
@@ -165,25 +167,24 @@ function ImagemOpcao({ o }: { o: Opcao }) {
 function ListaOpcoes({ opcoes, v }: { opcoes: Opcao[]; v: Votacao }) {
   const meus = new Map((v.meusVotos ?? []).map((m) => [m.opcaoId, m.quantidade]));
   return (
-    <section aria-labelledby="titulo-opcoes" className="space-y-3">
-      <h2 id="titulo-opcoes" className="text-xl font-bold">
-        Opções
-      </h2>
-      <ul className="grid gap-3 sm:grid-cols-2">
+    <Secao id="titulo-opcoes" titulo="Opções">
+      <ol className={styles.opcoes}>
         {opcoes.map((o) => (
-          <li key={o.id} className="space-y-2 rounded-[var(--radius-card)] border border-line bg-surface p-4">
+          <li key={o.id} className={styles.opcao}>
+            <div className={styles.opcaoTexto}>
+              <p className={styles.opcaoTitulo}>{o.titulo}</p>
+              {o.descricao && <p className={styles.opcaoDescricao}>{o.descricao}</p>}
+              {meus.get(o.id) ? (
+                <p className={styles.jaVotou}>
+                  <span aria-hidden="true">✓ </span>Você deu {plural(meus.get(o.id)!, "voto", "votos")} nesta opção
+                </p>
+              ) : null}
+            </div>
             <ImagemOpcao o={o} />
-            <p className="break-words font-semibold">{o.titulo}</p>
-            {o.descricao && <p className="break-words text-sm text-ink-muted">{o.descricao}</p>}
-            {meus.get(o.id) ? (
-              <p className="text-sm font-semibold text-brand-700">
-                <span aria-hidden="true">✓ </span>Você deu {plural(meus.get(o.id)!, "voto", "votos")} nesta opção
-              </p>
-            ) : null}
           </li>
         ))}
-      </ul>
-    </section>
+      </ol>
+    </Secao>
   );
 }
 
@@ -192,7 +193,7 @@ function MeusVotos({ v, opcoes }: { v: Votacao; opcoes: Opcao[] }) {
   if (usados === 0) return null;
   if (v.anonima || v.meusVotos === null) {
     return (
-      <p className="text-sm text-ink-muted">
+      <p className={styles.nota}>
         Você usou {plural(usados, "voto", "votos")}. Como a votação é anônima, não é possível mostrar em quais opções.
       </p>
     );
@@ -200,19 +201,16 @@ function MeusVotos({ v, opcoes }: { v: Votacao; opcoes: Opcao[] }) {
   if (v.meusVotos.length === 0) return null;
   const titulo = (id: number) => opcoes.find((o) => o.id === id)?.titulo ?? "Opção";
   return (
-    <section aria-labelledby="titulo-meus" className="rounded-[var(--radius-card)] border border-line bg-surface p-4">
-      <h2 id="titulo-meus" className="font-bold">
-        Meus votos
-      </h2>
-      <ul className="mt-2 space-y-1 text-sm">
+    <Secao id="titulo-meus" titulo="Meus votos">
+      <ul className={styles.resumo}>
         {v.meusVotos.map((m) => (
-          <li key={m.opcaoId} className="flex justify-between gap-3">
-            <span className="min-w-0 break-words">{titulo(m.opcaoId)}</span>
-            <span className="tabular-nums text-ink-muted">{plural(m.quantidade, "voto", "votos")}</span>
+          <li key={m.opcaoId}>
+            <span>{titulo(m.opcaoId)}</span>
+            <span className={styles.qtd}>{plural(m.quantidade, "voto", "votos")}</span>
           </li>
         ))}
       </ul>
-    </section>
+    </Secao>
   );
 }
 
@@ -266,22 +264,21 @@ function FormularioVoto({
   }
 
   return (
-    <section aria-labelledby="titulo-votar" className="space-y-4">
-      <div className="space-y-1">
-        <h2 id="titulo-votar" className="text-xl font-bold">
-          Escolha suas opções
-        </h2>
-        <p className="text-ink-muted">
+    <Secao
+      id="titulo-votar"
+      titulo="Escolha suas opções"
+      descricao={
+        <p>
           {v.permiteRepetirOpcao
             ? "Distribua seus votos como quiser: você pode dar mais de um voto na mesma opção."
             : "Marque as opções em que quer votar: no máximo 1 voto por opção."}{" "}
           Você pode enviar agora só parte dos votos e usar o restante depois, enquanto a votação estiver aberta.
         </p>
-      </div>
-
+      }
+    >
       <ContadorVotos usados={usados} total={v.votosPorAluno} selecionados={total} />
 
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className={styles.cedula}>
         {opcoes.map((o) => {
           const qtd = selecao[o.id] ?? 0;
           if (!v.permiteRepetirOpcao) {
@@ -289,76 +286,63 @@ function FormularioVoto({
             const bloqueada = jaVotou || (qtd === 0 && sobra <= 0);
             return (
               <li key={o.id}>
-                <label
-                  className={cx(
-                    "flex h-full flex-col gap-2 rounded-[var(--radius-card)] border bg-surface p-4 has-[:focus-visible]:outline has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-700",
-                    qtd > 0 ? "border-2 border-brand-600 bg-brand-50" : "border-line-strong",
-                    bloqueada ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:border-brand-600",
-                  )}
-                >
-                  <ImagemOpcao o={o} />
-                  <span className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      className="mt-0.5 size-5 shrink-0 accent-brand-600 focus-visible:outline-none"
-                      checked={qtd > 0}
-                      disabled={bloqueada}
-                      onChange={(e) => definir(o.id, e.target.checked ? 1 : 0)}
-                      aria-describedby={o.descricao || jaVotou ? `opcao-${o.id}-info` : undefined}
-                    />
-                    <span className="min-w-0">
-                      <span className="block break-words font-semibold">{o.titulo}</span>
-                      <span id={`opcao-${o.id}-info`} className="block text-sm text-ink-muted">
-                        {o.descricao && <span className="block break-words">{o.descricao}</span>}
-                        {jaVotou && <span className="block font-semibold text-brand-700"><span aria-hidden="true">✓ </span>Você já votou nesta opção</span>}
-                      </span>
+                <label className={cx(esc.item, styles.linhaCedula, qtd > 0 && esc.marcado, bloqueada && esc.bloqueado)}>
+                  <input
+                    type="checkbox"
+                    className={esc.controle}
+                    checked={qtd > 0}
+                    disabled={bloqueada}
+                    onChange={(e) => definir(o.id, e.target.checked ? 1 : 0)}
+                    aria-describedby={o.descricao || jaVotou ? `opcao-${o.id}-info` : undefined}
+                  />
+                  <span className={styles.opcaoTexto}>
+                    <span className={styles.opcaoTitulo}>{o.titulo}</span>
+                    <span id={`opcao-${o.id}-info`} className={styles.opcaoDescricao}>
+                      {o.descricao && <span className={styles.bloco}>{o.descricao}</span>}
+                      {jaVotou && (
+                        <span className={styles.jaVotou}>
+                          <span aria-hidden="true">✓ </span>Você já votou nesta opção
+                        </span>
+                      )}
                     </span>
                   </span>
+                  <ImagemOpcao o={o} />
                 </label>
               </li>
             );
           }
           const max = qtd + sobra;
+          const enviados = v.meusVotos?.find((m) => m.opcaoId === o.id);
           return (
-            <li
-              key={o.id}
-              className={cx(
-                "flex h-full flex-col gap-3 rounded-[var(--radius-card)] border bg-surface p-4",
-                qtd > 0 ? "border-2 border-brand-600 bg-brand-50" : "border-line-strong",
-              )}
-            >
-              <ImagemOpcao o={o} />
-              <div className="min-w-0">
-                <p id={`opcao-${o.id}-titulo`} className="break-words font-semibold">
+            <li key={o.id} className={cx(esc.item, styles.linhaCedula, styles.linhaContador, qtd > 0 && esc.marcado)}>
+              <div className={styles.opcaoTexto}>
+                <p id={`opcao-${o.id}-titulo`} className={styles.opcaoTitulo}>
                   {o.titulo}
                 </p>
-                {o.descricao && <p className="break-words text-sm text-ink-muted">{o.descricao}</p>}
-                {v.meusVotos?.find((m) => m.opcaoId === o.id) && (
-                  <p className="text-sm font-semibold text-brand-700">
-                    <span aria-hidden="true">✓ </span>Já enviados: {plural(v.meusVotos.find((m) => m.opcaoId === o.id)!.quantidade, "voto", "votos")}
+                {o.descricao && <p className={styles.opcaoDescricao}>{o.descricao}</p>}
+                {enviados && (
+                  <p className={styles.jaVotou}>
+                    <span aria-hidden="true">✓ </span>Já enviados: {plural(enviados.quantidade, "voto", "votos")}
                   </p>
                 )}
               </div>
-              <div
-                role="group"
-                aria-labelledby={`opcao-${o.id}-titulo`}
-                className="mt-auto flex items-center gap-3"
-              >
+              <ImagemOpcao o={o} />
+              <div role="group" aria-labelledby={`opcao-${o.id}-titulo`} className={styles.contador}>
                 <Button
                   variante="secondary"
-                  className="w-11 px-0 text-xl"
+                  className={styles.passo}
                   aria-label={`Tirar um voto de ${o.titulo}`}
                   disabled={qtd === 0}
                   onClick={() => definir(o.id, qtd - 1)}
                 >
                   −
                 </Button>
-                <span className="min-w-20 text-center tabular-nums" aria-live="polite">
-                  <strong className="text-lg">{qtd}</strong> {qtd === 1 ? "voto" : "votos"}
+                <span className={styles.valor} aria-live="polite">
+                  <strong>{qtd}</strong> {qtd === 1 ? "voto" : "votos"}
                 </span>
                 <Button
                   variante="secondary"
-                  className="w-11 px-0 text-xl"
+                  className={styles.passo}
                   aria-label={`Adicionar um voto em ${o.titulo}`}
                   disabled={qtd >= max}
                   onClick={() => definir(o.id, qtd + 1)}
@@ -371,23 +355,21 @@ function FormularioVoto({
         })}
       </ul>
 
-      <div className="sticky bottom-0 -mx-4 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:rounded-[var(--radius-card)] sm:border">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm" aria-live="polite">
-            <strong>{plural(total, "voto selecionado", "votos selecionados")}</strong>
-            <span className="text-ink-muted"> de {restantes} disponíveis</span>
-          </p>
-          <Button
-            disabled={total === 0}
-            onClick={() => {
-              setErro(null);
-              setConfirmando(true);
-            }}
-            className="w-full sm:w-auto"
-          >
-            Revisar e enviar
-          </Button>
-        </div>
+      <div className={styles.envio}>
+        <p aria-live="polite">
+          <strong>{plural(total, "voto selecionado", "votos selecionados")}</strong>
+          <span className={styles.cinza}> de {restantes} disponíveis</span>
+        </p>
+        <Button
+          disabled={total === 0}
+          onClick={() => {
+            setErro(null);
+            setConfirmando(true);
+          }}
+          className={styles.botaoEnvio}
+        >
+          Revisar e enviar
+        </Button>
       </div>
 
       <ConfirmDialog
@@ -400,16 +382,25 @@ function FormularioVoto({
         rotuloConfirmar="Confirmar e enviar"
         rotuloCancelar="Voltar e revisar"
       >
-        <ul className="space-y-1 rounded-[var(--radius-control)] border border-line p-3 text-ink">
-          {itens.map((o) => (
-            <li key={o.id} className="flex justify-between gap-3">
-              <span className="min-w-0 break-words">{o.titulo}</span>
-              <span className="tabular-nums">{plural(selecao[o.id], "voto", "votos")}</span>
-            </li>
-          ))}
-        </ul>
+        <table className={styles.confirmacao}>
+          <caption className="sr-only">Votos a enviar</caption>
+          <thead>
+            <tr>
+              <th scope="col">Opção</th>
+              <th scope="col">Votos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {itens.map((o) => (
+              <tr key={o.id}>
+                <td>{o.titulo}</td>
+                <td>{plural(selecao[o.id], "voto", "votos")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
         <p>
-          <strong className="text-ink">Votos enviados são finais:</strong> não dá para alterar nem retirar depois.
+          <strong className={styles.escuro}>Votos enviados são finais:</strong> não dá para alterar nem retirar depois.
         </p>
         <p>
           {v.anonima
@@ -418,28 +409,25 @@ function FormularioVoto({
         </p>
         {sobra > 0 && <p>Depois deste envio, você ainda terá {plural(sobra, "voto", "votos")}.</p>}
       </ConfirmDialog>
-    </section>
+    </Secao>
   );
 }
 
 function ContadorVotos({ usados, total, selecionados }: { usados: number; total: number; selecionados: number }) {
   const restantes = Math.max(0, total - usados);
   return (
-    <div className="rounded-[var(--radius-card)] border border-line bg-surface p-4">
-      <p className="font-semibold">
-        Você tem {plural(restantes, "voto restante", "votos restantes")}{" "}
-        <span className="font-normal text-ink-muted">
+    <div className={styles.saldo}>
+      <p>
+        <strong>Você tem {plural(restantes, "voto restante", "votos restantes")}</strong>{" "}
+        <span className={styles.cinza}>
           (já usou {usados} de {total})
         </span>
       </p>
-      <div className="mt-3 flex gap-1" aria-hidden="true">
+      <div className={styles.casas} aria-hidden="true">
         {Array.from({ length: Math.min(total, 40) }).map((_, i) => (
           <span
             key={i}
-            className={cx(
-              "h-2.5 flex-1 rounded-full",
-              i < usados ? "bg-ink-muted" : i < usados + selecionados ? "bg-brand-600" : "bg-track",
-            )}
+            className={cx(styles.casa, i < usados ? styles.usada : i < usados + selecionados ? styles.selecionada : undefined)}
           />
         ))}
       </div>

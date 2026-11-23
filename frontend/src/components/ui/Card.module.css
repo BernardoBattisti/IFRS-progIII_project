@@ -1,0 +1,69 @@
+.caixa {
+  background: var(--branco);
+  border: 1px solid var(--cinza-400);
+  border-radius: var(--raio);
+  padding: var(--esp-4);
+}
+
+.caixa > * + * {
+  margin-top: var(--esp-3);
+}
+
+.form {
+  background: var(--cinza-100);
+}
+
+.secao {
+  background: var(--branco);
+  border: 1px solid var(--cinza-400);
+  border-radius: var(--raio);
+}
+
+.secao.form .corpo {
+  background: var(--cinza-100);
+}
+
+.faixa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-2) var(--esp-3);
+  padding: var(--esp-2) var(--esp-4);
+  background: var(--cinza-200);
+  border-bottom: 2px solid var(--verde-600);
+}
+
+.perigo .faixa {
+  border-bottom-color: var(--vermelho-700);
+}
+
+.titulo {
+  font-size: 1.125rem;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+}
+
+.corpo {
+  padding: var(--esp-4);
+}
+
+.corpo > * + * {
+  margin-top: var(--esp-4);
+}
+
+.descricao {
+  color: var(--cinza-700);
+  font-size: var(--texto-p);
+}
+
+@media (max-width: 639px) {
+  .corpo,
+  .caixa {
+    padding: var(--esp-3);
+  }
+}

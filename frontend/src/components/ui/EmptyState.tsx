@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import styles from "./EmptyState.module.css";
 
 export function EmptyState({
   titulo,
@@ -10,10 +11,10 @@ export function EmptyState({
   acao?: ReactNode;
 }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-dashed border-line-strong bg-surface px-4 py-10 text-center">
-      <p className="text-base font-semibold text-ink">{titulo}</p>
-      {children && <div className="mx-auto mt-1 max-w-prose text-sm text-ink-muted">{children}</div>}
-      {acao && <div className="mt-4 flex justify-center">{acao}</div>}
+    <div className={styles.vazio}>
+      <p className={styles.titulo}>{titulo}</p>
+      {children && <div className={styles.texto}>{children}</div>}
+      {acao && <div className={styles.acao}>{acao}</div>}
     </div>
   );
 }

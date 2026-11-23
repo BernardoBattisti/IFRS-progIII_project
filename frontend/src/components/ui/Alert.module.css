@@ -1,0 +1,63 @@
+.caixa {
+  border: 1px solid;
+  border-left-width: 5px;
+  border-radius: var(--raio);
+  padding: var(--esp-3) var(--esp-4);
+  font-size: var(--texto-p);
+  color: var(--cinza-900);
+}
+
+.titulo {
+  font-weight: 700;
+  font-size: var(--texto-m);
+}
+
+.corpo > * + * {
+  margin-top: var(--esp-1);
+}
+
+.titulo + .corpo {
+  margin-top: var(--esp-1);
+}
+
+.corpo a {
+  color: inherit;
+  font-weight: 700;
+}
+
+.info {
+  background: var(--azul-100);
+  border-color: var(--azul-800);
+}
+
+.info .titulo {
+  color: var(--azul-800);
+}
+
+.sucesso {
+  background: var(--verde-100);
+  border-color: var(--verde-600);
+}
+
+.sucesso .titulo {
+  color: var(--verde-700);
+}
+
+.aviso {
+  background: var(--amarelo-100);
+  border-color: var(--amarelo-700);
+}
+
+.aviso .titulo {
+  color: var(--amarelo-800);
+}
+
+.erro {
+  background: var(--vermelho-100);
+  border-color: var(--vermelho-700);
+}
+
+.erro .titulo,
+.erro .corpo {
+  color: var(--vermelho-700);
+}

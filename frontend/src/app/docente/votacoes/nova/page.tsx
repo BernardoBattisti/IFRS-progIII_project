@@ -1,7 +1,7 @@
 "use client";
 
 import { useTitulo } from "@/lib/useTitulo";
-import Link from "next/link";
+import { Trilha } from "@/components/ui/Trilha";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { VotacaoForm } from "@/components/VotacaoForm";
 
@@ -10,11 +10,7 @@ export default function NovaVotacao() {
   return (
     <>
       <PageHeader
-        antes={
-          <Link href="/docente" className="inline-flex min-h-11 items-center font-semibold text-brand-700 hover:underline">
-            <span aria-hidden="true">←&nbsp;</span>Voltar para votações
-          </Link>
-        }
+        antes={<Trilha itens={[{ rotulo: "Votações", href: "/docente" }, { rotulo: "Nova votação" }]} />}
         titulo="Nova votação"
         descricao="Preencha os dados e salve como rascunho. Você publica depois."
       />

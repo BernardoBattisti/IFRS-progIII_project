@@ -1,85 +1,139 @@
-# Design system — Votações IFRS
+# Design system — Sistema de Votações IFRS
 
-Tokens definidos em `src/app/globals.css` (`@theme` do Tailwind v4) e usados como classes
-(`bg-brand-600`, `text-ink-muted`, `border-line-strong`…). Tema claro apenas.
-Não usamos o logotipo do IFRS — só a paleta institucional.
+Direção: **sistema institucional público** (como o sistema acadêmico de um instituto federal ou um portal
+de órgão público). Faixa sólida de cabeçalho, barra de navegação, trilha nas páginas internas, listagens em
+tabelas com bordas, formulários em caixas cinza, botões retangulares. Sem gradientes, sem sombras difusas,
+sem pílulas, sem ícones decorativos, sem emojis, sem ilustrações. Alinhado à esquerda e denso.
 
-## Cores
+Implementação: **CSS puro**. `src/app/globals.css` guarda só reset, tokens (`:root`), elementos base
+(`body`, títulos, `a`, `table`, campos nativos, foco) e o utilitário de acessibilidade `.sr-only`.
+Cada componente/página tem seu `*.module.css` ao lado. Nenhum framework de CSS ou de componentes.
+Tema claro apenas. Não usamos o logotipo do IFRS.
 
-| Token | Valor | Uso | Contraste |
+## Cores (tokens em `:root`)
+
+Contrastes medidos com a fórmula de luminância relativa da WCAG 2.1 (script em Node).
+
+| Token | Valor | Uso | Contraste medido |
 |---|---|---|---|
-| `brand-500` | `#2F9E41` | Verde da marca. Só decoração e áreas grandes (faixa do topo) | 3,45:1 com branco — **não** usar para texto |
-| `brand-600` | `#237A32` | Botão primário, links, barras de resultado, bordas de seleção | 5,38:1 com branco; 4,34:1 sobre o trilho `track` |
-| `brand-700` | `#1E6B2B` | Hover, texto de link, contorno de foco | 6,58:1 |
-| `brand-800` | `#1B5E27` | Pressionado; texto de badge “Aberta” | 7,84:1 |
-| `brand-50` / `brand-100` / `brand-200` | `#EAF6EC` / `#D3EDD7` / `#A9DBB1` | Fundos de seleção e de sucesso | — |
-| `accent-red` | `#CD191E` | Vermelho da marca: **só** o detalhe da faixa do cabeçalho | Nunca para erro/destrutivo |
-| `ink` | `#1D2939` | Texto principal | 14,7:1 |
-| `ink-muted` | `#475467` | Texto secundário | 7,69:1 (7,21:1 sobre `canvas`) |
-| `ink-subtle` | `#667085` | Placeholder | 4,97:1 |
-| `line` | `#D0D5DD` | Divisórias e contornos decorativos | — |
-| `line-strong` | `#7A8599` | Borda de campos e botões secundários | 3,72:1 (1.4.11) |
-| `canvas` / `surface` | `#F6F8F7` / `#FFFFFF` | Fundo da página / cartões | — |
-| `track` | `#E4E7EC` | Trilho das barras de resultado | — |
-| `danger-600` (+50/200/700) | `#B42318` | Erros e ações destrutivas | 6,57:1 com branco; 6,05:1 sobre `danger-50` |
-| `warning-700` (+50/200) | `#93370D` | Avisos (ex.: votação identificada) | 7,21:1 sobre `warning-50` |
-| `info-700` (+50/200) | `#175CD3` | Informações (ex.: votação anônima, agendada) | 5,57:1 sobre `info-50` |
+| `--verde-900` | `#143A20` | Barra de navegação | branco 12,68:1 · `#D9E6DC` 9,85:1 |
+| `--verde-800` | `#1D4F2C` | Faixa do cabeçalho | branco 9,52:1 · `#D9E6DC` 7,39:1 |
+| `--verde-700` | `#174F27` | Hover do primário e de links | branco 9,61:1 |
+| `--verde-600` | `#1F6A34` | Botão primário, links, barras de resultado, borda de seleção | branco 6,63:1 · sobre `--cinza-100` 5,96:1 · sobre `--cinza-200` 5,32:1 · sobre `--verde-100` 5,74:1 |
+| `--verde-100` | `#E8F1EA` | Fundo de seleção, aviso de sucesso, rótulo “Aberta” | `--verde-700` sobre ele 8,33:1 |
+| `--cinza-900` | `#1B1D1B` | Texto principal | branco 16,96:1 · `--cinza-200` 13,61:1 |
+| `--cinza-700` | `#4A4F4A` | Texto secundário, ajuda | branco 8,37:1 · `--cinza-100` 7,53:1 · `--cinza-200` 6,72:1 |
+| `--cinza-600` | `#6B716B` | Borda de campos, botões secundários, caixas de marcação | branco 5,00:1 · `--cinza-100` 4,50:1 (≥ 3:1, 1.4.11) |
+| `--cinza-400` | `#B9BFB9` | Bordas de tabela e divisórias (estrutura, não componente) | decorativo |
+| `--cinza-200` | `#E4E7E4` | Cabeçalho de tabela, faixa de título de caixa, trilho das barras | — |
+| `--cinza-100` | `#F2F3F2` | Fundo das caixas de formulário e da página | — |
+| `--branco` | `#FFFFFF` | Fundo do conteúdo e das tabelas | — |
+| `--vermelho-700` | `#A3201A` | **Só** erro e ação destrutiva | branco 7,56:1 · sobre `--vermelho-100` 6,59:1 |
+| `--vermelho-800` | `#8A1B16` | Hover destrutivo | branco 9,34:1 |
+| `--vermelho-100` | `#FBECEB` | Fundo de aviso de erro | — |
+| `--amarelo-800` / `--amarelo-100` | `#6B4500` / `#FFF5D6` | Aviso (ex.: votação identificada) | 7,79:1 · texto principal sobre o fundo 15,57:1 |
+| `--amarelo-700` | `#8A5A00` | Borda do aviso | branco 5,93:1 |
+| `--azul-800` / `--azul-100` | `#1D4A73` / `#E9F0F7` | Informação, rótulo “Agendada” | 8,02:1 · branco 9,21:1 |
+| `--foco` | `#B35400` | Anel de foco em fundos claros | branco 5,02:1 · `--cinza-100` 4,51:1 |
+| `--foco-escuro` | `#FFD84D` | Anel de foco na faixa/barra verde | `--verde-800` 6,88:1 · `--verde-900` 9,17:1 |
 
-Erro × marca: o vermelho institucional fica restrito à faixa decorativa; erros e ações destrutivas usam
-`danger-600` (tom diferente) **sempre** acompanhado de ícone/“✕” e texto, nunca só cor.
+O foco é **âmbar** de propósito: não se confunde com o verde (marca/seleção) nem com o vermelho (erro).
+Erros e ações destrutivas sempre têm texto (“Excluir…”, “✕ mensagem”), nunca só cor.
 
 ## Tipografia
 
-Pilha de fontes do sistema (`ui-sans-serif, system-ui, …`) — sem download de fontes.
-Escala Tailwind: `text-sm` (14px) auxiliar · `text-base` (16px) corpo e campos (evita zoom no iOS) ·
-`text-lg`/`text-xl` títulos de seção · `text-2xl`→`sm:text-3xl` título da página. Pesos 400/600/700.
-Números de votos com `tabular-nums`.
+- **Títulos** (`h1`–`h3`, nome do sistema na faixa, títulos de caixa): *Source Serif 4* (600/700), auto-hospedada
+  por `next/font/google` (baixada no build; o navegador não acessa o Google). Pilha:
+  `var(--fonte-serifa-carregada), Georgia, "Times New Roman", serif`.
+- **Corpo, tabelas, formulários, botões**: pilha do sistema `Arial, "Segoe UI", Helvetica, "Liberation Sans", sans-serif`.
+- Escala (rem): `--texto-pp` 0,8125 (rótulos de estado) · `--texto-p` 0,875 (ajuda, tabelas densas, trilha) ·
+  `--texto-m` 1 (corpo e campos — 16px evita zoom no iOS) · `h3` 1,0625 · `h2` 1,25 · `h1` 1,625 (1,375 no celular).
+- Pesos 400/700. `font-variant-numeric: tabular-nums` em números de votos e datas.
 
-## Espaçamento, raios, sombras
+## Espaçamento, bordas, sombras
 
-- Escala de 4px do Tailwind. Gutter da página 16px (`px-4`), largura máxima `max-w-5xl`.
-- `--radius-control` 8px (campos/botões) · `--radius-card` 12px (cartões, diálogos).
-- `--shadow-card` (elevação 1) · `--shadow-overlay` (diálogos e skip link).
+- Escala de 4px: `--esp-1` 4 · `--esp-2` 8 · `--esp-3` 12 · `--esp-4` 16 · `--esp-5` 24 · `--esp-6` 32.
+- Largura máxima do conteúdo `--largura` 64rem (1024px), gutter 16px, alinhado à esquerda.
+- `--raio` **2px** em botões, campos, caixas e rótulos (o limite combinado é ≤ 3px). Nada de `border-radius: 999px`.
+- Bordas 1px; seleção/erro 2px. **Sem sombras**, exceto o diálogo (uma sombra curta e firme, `0 2px 0`, para separá-lo do fundo escurecido).
+
+## Componentes
+
+### Cabeçalho (`AppShell`, `TelaPublica`, `TelaSimples`)
+Faixa `--verde-800` com o nome **“Sistema de Votações”** em serifa branca e “Instituto Federal do Rio Grande do Sul” em
+texto menor; à direita, “Usuário: nome (perfil)”, link “Minha conta” e botão “Sair” (texto claro, foco amarelo).
+Abaixo, barra de navegação `--verde-900` com os itens da área; item ativo com fundo branco e texto verde
+(`aria-current="page"`). No celular, nome e usuário empilham, itens da barra quebram linha (sem rolagem).
+Rodapé cinza simples com o nome do sistema.
+
+### Trilha (`ui/Trilha`)
+`<nav aria-label="Trilha de navegação"><ol>` com separador “»” (`aria-hidden`); o último item é texto com
+`aria-current="page"`. Usada nas páginas internas (detalhe de votação, nova/editar votação, detalhe de turma).
+
+### Título da página (`ui/PageHeader`)
+`h1` serifado com linha inferior de 2px `--verde-600`; descrição em `--cinza-700`; ações à direita (desktop) ou abaixo.
+
+### Caixa / Seção (`ui/Card`, `ui/Secao`)
+Borda 1px `--cinza-400`, fundo branco; `Secao` tem o título (`h2`) numa faixa `--cinza-200` com borda inferior.
+Variante `form`: fundo `--cinza-100` (caixas de formulário). Variante `perigo`: faixa do título com borda vermelha.
+
+### Tabela (`ui/Tabela`)
+`<table>` com bordas 1px em todas as células, cabeçalho `--cinza-200` em negrito, linhas zebradas leves, `caption` opcional.
+Abaixo de 640px, cada linha vira um bloco empilhado: o cabeçalho fica só para leitores de tela e cada célula mostra
+seu rótulo (`data-rotulo`) antes do valor. Sem rolagem horizontal.
+
+### Formulário (`ui/Field`)
+Rótulo em negrito acima do campo, “(obrigatório)” em texto, ajuda abaixo (`aria-describedby`), erro em vermelho
+com “✕” e `aria-invalid`. Campos com borda `--cinza-600`, fundo branco, altura mínima 44px. Grupos de rádio/caixa
+de marcação em linhas com borda; selecionado = borda 2px `--verde-600` + fundo `--verde-100`.
+
+### Botão (`ui/Button`)
+Retangular, borda 1px, raio 2px, negrito, altura mínima 44px (36px para `sm` só a partir de 640px).
+`primary` verde cheio · `secondary` branco com borda cinza e texto verde · `ghost` sem borda, texto verde sublinhado no hover ·
+`danger` vermelho cheio · `danger-secondary` branco com borda e texto vermelho (remover/excluir em linhas de tabela).
+Desabilitado: opacidade 55% e `cursor: not-allowed`. Carregando: indicador giratório + `aria-busy`.
+
+### Rótulo de estado (`ui/Badge`)
+Retângulo pequeno (borda 1px, raio 2px, 13px, negrito), sempre com texto:
+
+| Estado | Texto | Estilo |
+|---|---|---|
+| `RASCUNHO` | Rascunho | borda tracejada `--cinza-600`, texto `--cinza-700`, fundo branco |
+| `AGENDADA` | Agendada | borda/texto `--azul-800`, fundo `--azul-100` |
+| `ABERTA` | Aberta | borda `--verde-600`, texto `--verde-700`, fundo `--verde-100` |
+| `ENCERRADA` | Encerrada | fundo `--cinza-200`, borda `--cinza-600`, texto `--cinza-900` |
+| Conta | Ativo · Aguardando aprovação · Rejeitado | verde · amarelo · vermelho, mesmo formato |
+
+### Aviso (`ui/Alert`)
+Caixa com borda 1px e **barra esquerda de 5px** na cor do tom (info azul, sucesso verde, aviso âmbar, erro vermelho),
+fundo claro do tom, título em negrito. Sem ícones. `anunciar` usa `role="alert"` (erro) ou `role="status"`.
+
+### Diálogo (`ui/Dialog`)
+`<dialog>` nativo (`showModal`: foco preso, Esc fecha, foco volta ao gatilho). Título em faixa `--verde-800` com texto
+branco serifado, corpo branco, rodapé cinza com os botões (confirmar à direita no desktop, em cima no celular).
+
+### Lista vazia (`ui/EmptyState`)
+Caixa cinza com borda tracejada, alinhada à esquerda: título em negrito, explicação e ação.
 
 ## Estados
 
 | Estado | Tratamento |
 |---|---|
-| Foco | `outline` 3px `brand-700` com 2px de afastamento, em todo elemento focável (`:focus-visible`) |
-| Hover | Primário → `brand-700`; secundário/ghost → fundo `brand-50` |
-| Desabilitado | Opacidade 60% + `cursor-not-allowed` |
-| Carregando | Spinner no botão + `aria-busy`; listas mostram “Carregando…” com `role="status"` |
-| Erro de campo | Borda 2px `danger-600`, mensagem abaixo ligada por `aria-describedby`, `aria-invalid` |
-| Selecionado (opção de voto/escolha) | Borda 2px `brand-600` + fundo `brand-50` + controle nativo marcado |
-
-Alvos de toque: botões com altura mínima de 44px no celular (o tamanho `sm` cai para 36px só a partir de 640px).
-
-## Componentes (`src/components/ui`)
-
-`Button`/`LinkBotao` (primary, secondary, ghost, danger; md/sm) · `InputField`/`TextareaField`/`SelectField`
-(rótulo, ajuda, erro, “(obrigatório)”) · `SenhaField` (botão Mostrar/Ocultar; com `minimo`, contador “faltam N” na ajuda) · `Alert` (info, sucesso, aviso, erro — ícone + título) ·
-`Badge`, `EstadoBadge`, `StatusBadge` · `Card` · `EmptyState` (o que é + por que está vazio + como começar) ·
-`Dialog`/`ConfirmDialog` (`<dialog>` nativo: foco preso, Esc fecha, foco volta ao gatilho) · `Spinner`/`Carregando` ·
-`PageHeader`.
-
-### Badges de estado da votação
-
-| Estado | Rótulo | Estilo |
-|---|---|---|
-| `RASCUNHO` | Rascunho | neutro (cinza `#344054` sobre `#F2F4F7`) |
-| `AGENDADA` | Agendada | info |
-| `ABERTA` | Aberta | verde, com ponto |
-| `ENCERRADA` | Encerrada | escuro (`ink` com texto branco) |
-
-Status de conta: Ativo (verde), Aguardando aprovação (aviso), Rejeitado (erro).
+| Foco | `outline` 3px `--foco` (âmbar) com 2px de afastamento; `--foco-escuro` (amarelo) na faixa/barra verde |
+| Hover | Primário → `--verde-700`; secundário → fundo `--verde-100`; links → sublinhado mais grosso |
+| Desabilitado | Opacidade 55% + `cursor: not-allowed` |
+| Carregando | Indicador giratório + texto com `role="status"` |
+| Erro de campo | Borda 2px `--vermelho-700`, mensagem ligada por `aria-describedby`, `aria-invalid` |
+| Selecionado | Borda 2px `--verde-600` + fundo `--verde-100` + controle nativo marcado |
 
 ## Padrões
 
-- **Resultados**: barras horizontais HTML/CSS; rótulo, percentual e contagem sempre em texto; barra `aria-hidden`.
-- **Ações irreversíveis** (enviar voto, encerrar, excluir, rejeitar, gerar novo código): diálogo com título em
-  forma de pergunta específica, consequência descrita e botões rotulados com a ação (“Encerrar votação” / “Manter aberta”).
-- **Telas públicas** (login, criar conta, recuperar/criar nova senha): `TelaPublica` — marca centralizada, cartão
-  `max-w-md` com `h1` e link de troca de tela abaixo. Senhas: `autocomplete` `current-password` (login, senha atual)
-  ou `new-password` (cadastro, nova senha); e-mail com `autocomplete="email"`.
-- **Texto**: português do Brasil, verbos no imperativo nos botões, glossário fixo — votação, opção, voto, turma,
-  código da turma, matrícula, docente, aluno, rascunho, publicar/despublicar, encerrar, prorrogar.
+- **Listagens**: tabelas (votações, turmas, alunos, usuários, domínios, opções, resultados). Ação por linha em botão
+  pequeno com o nome do item em `.sr-only` (“Abrir<span>Tema da feira</span>”).
+- **Resultados**: tabela Opção · Votos · Percentual · barra simples (`aria-hidden`); número e percentual sempre em texto.
+- **Cédula do aluno**: opções em linhas com caixa de marcação (ou contador − / +), imagem quando houver, barra de
+  envio fixa no rodapé no celular e diálogo de confirmação antes de enviar.
+- **Ações irreversíveis**: diálogo com título em forma de pergunta e botões rotulados com a ação.
+- **Telas públicas**: faixa do cabeçalho, título à esquerda, formulário numa caixa cinza de até 30rem.
+- **Texto**: português do Brasil, imperativo nos botões, glossário fixo — votação, opção, voto, turma, código da turma,
+  matrícula, docente, aluno, rascunho, publicar/despublicar, encerrar, prorrogar.

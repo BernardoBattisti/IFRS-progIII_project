@@ -6,13 +6,14 @@ import { api, mensagemDeErro } from "@/lib/api";
 import { rotaInicial } from "@/lib/rotas";
 import type { Usuario } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import styles from "@/components/FormPublico.module.css";
 
 export function BotaoVerificar() {
   const router = useRouter();
   const [carregando, setCarregando] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   return (
-    <div className="space-y-2">
+    <div className={styles.grupo}>
       <Button
         variante="secondary"
         carregando={carregando}
@@ -33,7 +34,7 @@ export function BotaoVerificar() {
       >
         Verificar aprovação
       </Button>
-      <p role="status" className="text-sm text-ink-muted">
+      <p role="status" className={styles.texto}>
         {msg}
       </p>
     </div>

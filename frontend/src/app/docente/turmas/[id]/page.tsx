@@ -1,7 +1,6 @@
 "use client";
 
 import { useTitulo } from "@/lib/useTitulo";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, mensagemDeErro } from "@/lib/api";
@@ -12,7 +11,10 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Carregando } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErroCarregar } from "@/components/ErroCarregar";
-import { Card } from "@/components/ui/Card";
+import { Secao } from "@/components/ui/Card";
+import { Tabela, celula } from "@/components/ui/Tabela";
+import { Trilha } from "@/components/ui/Trilha";
+import styles from "./page.module.css";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { ConfirmDialog } from "@/components/ui/Dialog";
@@ -53,11 +55,7 @@ export default function TurmaDocente() {
     }
   }
 
-  const voltar = (
-    <Link href="/docente/turmas" className="inline-flex min-h-11 items-center font-semibold text-brand-700 hover:underline">
-      <span aria-hidden="true">←&nbsp;</span>Voltar para turmas
-    </Link>
-  );
+  const voltar = <Trilha itens={[{ rotulo: "Turmas", href: "/docente/turmas" }, { rotulo: t?.nome ?? "Turma" }]} />;
 
   if (!t) {
     return (
@@ -85,15 +83,14 @@ export default function TurmaDocente() {
           )
         }
       />
-      <div className="space-y-6">
+      <div className={styles.pilha}>
         {aviso && (
           <Alert tom="sucesso" anunciar>
             <p>{aviso}</p>
           </Alert>
         )}
         {editando && (
-          <Card>
-            <h2 className="mb-3 text-lg font-bold">Editar turma</h2>
+          <Secao id="titulo-editar" titulo="Editar turma" variante="form">
             <TurmaForm
               inicial={t}
               aoSalvar={(nova) => {
@@ -103,22 +100,28 @@ export default function TurmaDocente() {
               }}
               aoCancelar={() => setEditando(false)}
             />
-          </Card>
+          </Secao>
         )}
 
-        <Card className="space-y-3">
-          <h2 className="text-lg font-bold">Código de entrada</h2>
-          <p className="text-sm text-ink-muted">Os alunos entram na turma digitando este código em “Turmas”.</p>
+        <Secao
+          id="titulo-codigo"
+          titulo="Código de entrada"
+          descricao="Os alunos entram na turma digitando este código em “Turmas”."
+        >
           {t.codigo && <CodigoTurma codigo={t.codigo} nomeTurma={t.nome} />}
           <Button variante="secondary" tamanho="sm" onClick={() => { setErroAcao(null); setDialogo("codigo"); }}>
             Gerar novo código
           </Button>
-        </Card>
+        </Secao>
 
-        <section aria-labelledby="titulo-alunos" className="space-y-3">
-          <h2 id="titulo-alunos" className="text-lg font-bold">
-            Alunos {alunos.dados && <span className="font-normal text-ink-muted">({alunos.dados.length})</span>}
-          </h2>
+        <Secao
+          id="titulo-alunos"
+          titulo={
+            <>
+              Alunos {alunos.dados && <span className={styles.qtd}>({alunos.dados.length})</span>}
+            </>
+          }
+        >
           {alunos.carregando && <Carregando texto="Carregando alunos…" />}
           {alunos.erro && <ErroCarregar mensagem={alunos.erro} aoTentar={alunos.recarregar} />}
           {alunos.dados && alunos.dados.length === 0 && (
@@ -127,43 +130,56 @@ export default function TurmaDocente() {
             </EmptyState>
           )}
           {alunos.dados && alunos.dados.length > 0 && (
-            <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-surface">
-              {alunos.dados.map((a) => (
-                <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
-                  <div className="min-w-0">
-                    <p className="break-words font-semibold">{a.nome}</p>
-                    <p className="break-all text-sm text-ink-muted">
-                      Matrícula {a.matricula} · {a.email}
-                    </p>
-                  </div>
-                  <Button
-                    variante="ghost"
-                    tamanho="sm"
-                    className="text-danger-600 hover:bg-danger-50"
-                    onClick={() => {
-                      setErroAcao(null);
-                      setDialogo({ remover: a });
-                    }}
-                  >
-                    Remover<span className="sr-only"> {a.nome} da turma</span>
-                  </Button>
-                </li>
-              ))}
-            </ul>
+            <Tabela legenda="Alunos da turma">
+              <thead>
+                <tr>
+                  <th scope="col">Nome</th>
+                  <th scope="col">Matrícula</th>
+                  <th scope="col">E-mail</th>
+                  <th scope="col">
+                    <span className="sr-only">Ação</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {alunos.dados.map((a) => (
+                  <tr key={a.id}>
+                    <td data-rotulo="Nome" className={`${celula.principal} ${celula.semRotulo}`}>
+                      {a.nome}
+                    </td>
+                    <td data-rotulo="Matrícula">{a.matricula}</td>
+                    <td data-rotulo="E-mail" className={styles.email}>
+                      {a.email}
+                    </td>
+                    <td className={`${celula.acoes} ${celula.semRotulo}`}>
+                      <Button
+                        variante="danger-secondary"
+                        tamanho="sm"
+                        onClick={() => {
+                          setErroAcao(null);
+                          setDialogo({ remover: a });
+                        }}
+                      >
+                        Remover<span className="sr-only"> {a.nome} da turma</span>
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Tabela>
           )}
-        </section>
+        </Secao>
 
-        <section aria-labelledby="titulo-excluir" className="rounded-[var(--radius-card)] border border-danger-200 bg-surface p-4">
-          <h2 id="titulo-excluir" className="font-bold">
-            Excluir turma
-          </h2>
-          <p className="mt-1 text-sm text-ink-muted">
-            Só é possível excluir turmas que não estão vinculadas a nenhuma votação.
-          </p>
-          <Button variante="danger" tamanho="sm" className="mt-3" onClick={() => { setErroAcao(null); setDialogo("excluir"); }}>
+        <Secao
+          id="titulo-excluir"
+          titulo="Excluir turma"
+          variante="perigo"
+          descricao="Só é possível excluir turmas que não estão vinculadas a nenhuma votação."
+        >
+          <Button variante="danger" tamanho="sm" onClick={() => { setErroAcao(null); setDialogo("excluir"); }}>
             Excluir turma
           </Button>
-        </section>
+        </Secao>
       </div>
 
       <ConfirmDialog
@@ -183,7 +199,7 @@ export default function TurmaDocente() {
         }
       >
         <p>
-          O código atual (<span className="font-mono font-semibold text-ink">{t.codigo}</span>) deixará de funcionar. Os
+          O código atual (<code className={styles.codigo}>{t.codigo}</code>) deixará de funcionar. Os
           alunos que já estão na turma continuam nela.
         </p>
       </ConfirmDialog>

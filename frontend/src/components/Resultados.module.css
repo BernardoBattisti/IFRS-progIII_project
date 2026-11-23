@@ -1,0 +1,111 @@
+.atualiza {
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}
+
+.totais {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--cinza-400);
+  font-size: var(--texto-p);
+}
+
+.totais > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--esp-2);
+  padding: var(--esp-2) var(--esp-3);
+  border-right: 1px solid var(--cinza-400);
+}
+
+.totais dt {
+  color: var(--cinza-700);
+}
+
+.totais dd {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.colBarra {
+  width: 35%;
+}
+
+.trilho {
+  height: 1rem;
+  margin-top: 0.125rem;
+  background: var(--cinza-200);
+  border: 1px solid var(--cinza-600);
+}
+
+.barra {
+  height: 100%;
+  background: var(--verde-600);
+}
+
+.maisVotada {
+  color: var(--verde-700);
+  font-weight: 700;
+  font-size: var(--texto-pp);
+}
+
+.nota {
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}
+
+.votantes {
+  margin-top: var(--esp-1);
+}
+
+.votantes summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo);
+  color: var(--verde-600);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+@media (min-width: 640px) {
+  .votantes summary {
+    min-height: 2rem;
+  }
+}
+
+.votantes ul {
+  margin-top: var(--esp-1);
+  border-top: 1px solid var(--cinza-400);
+}
+
+.votantes li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--esp-3);
+  padding: var(--esp-1) 0;
+  border-bottom: 1px solid var(--cinza-200);
+}
+
+.matricula,
+.qtd {
+  color: var(--cinza-700);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 639px) {
+  .colBarra {
+    width: 100%;
+  }
+
+  .totais {
+    width: 100%;
+  }
+
+  .totais > div {
+    flex: 1 1 50%;
+  }
+}

@@ -11,8 +11,10 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErroCarregar } from "@/components/ErroCarregar";
 import { SelectField } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
-import { Badge, ROTULO_STATUS, StatusBadge } from "@/components/ui/Badge";
+import { ROTULO_STATUS, StatusBadge } from "@/components/ui/Badge";
 import { DecisaoDocente } from "@/components/DecisaoDocente";
+import { Tabela, celula } from "@/components/ui/Tabela";
+import styles from "./page.module.css";
 
 const PAPEIS: Record<Papel, string> = { ALUNO: "Aluno", DOCENTE: "Docente", ADMIN: "Administrador" };
 
@@ -32,7 +34,7 @@ export default function Usuarios() {
   return (
     <>
       <PageHeader titulo="Usuários" descricao="Todas as contas do sistema." />
-      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:w-2/3">
+      <form className={styles.filtros} onSubmit={(e) => e.preventDefault()} aria-label="Filtrar usuários">
         <SelectField rotulo="Status" value={status} onChange={(e) => setStatus(e.target.value as StatusConta | "")}>
           <option value="">Todos os status</option>
           {(Object.keys(ROTULO_STATUS) as StatusConta[]).map((s) => (
@@ -49,9 +51,9 @@ export default function Usuarios() {
             </option>
           ))}
         </SelectField>
-      </div>
+      </form>
       {aviso && (
-        <Alert tom="sucesso" anunciar className="mb-4">
+        <Alert tom="sucesso" anunciar className={styles.aviso}>
           <p>{aviso}</p>
         </Alert>
       )}
@@ -62,35 +64,54 @@ export default function Usuarios() {
       )}
       {!carregando && dados && dados.length > 0 && (
         <>
-          <p className="mb-2 text-sm text-ink-muted" role="status">
+          <p className={styles.contagem} role="status">
             {dados.length} {dados.length === 1 ? "usuário" : "usuários"}
           </p>
-          <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-surface">
-            {dados.map((u) => (
-              <li key={u.id} className="grid gap-2 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
-                <div className="min-w-0">
-                  <p className="break-words font-semibold">{u.nome}</p>
-                  <p className="break-all text-sm text-ink-muted">{u.email}</p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
-                    <Badge>{PAPEIS[u.papel]}</Badge>
+          <Tabela legenda="Usuários do sistema">
+            <thead>
+              <tr>
+                <th scope="col">Nome</th>
+                <th scope="col">E-mail</th>
+                <th scope="col">Matrícula</th>
+                <th scope="col">Papel</th>
+                <th scope="col">Situação</th>
+                <th scope="col">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dados.map((u) => (
+                <tr key={u.id}>
+                  <td data-rotulo="Nome" className={`${celula.principal} ${celula.semRotulo}`}>
+                    {u.nome}
+                  </td>
+                  <td data-rotulo="E-mail" className={styles.email}>
+                    {u.email}
+                  </td>
+                  <td data-rotulo="Matrícula">{u.matricula ?? "—"}</td>
+                  <td data-rotulo="Papel">{PAPEIS[u.papel]}</td>
+                  <td data-rotulo="Situação">
                     <StatusBadge status={u.status} />
-                    {u.matricula && <span className="text-ink-muted">Matrícula {u.matricula}</span>}
-                    {u.papel === "ADMIN" && <span className="text-ink-muted">Conta fixa do sistema</span>}
-                  </div>
-                </div>
-                {/* O admin fixo nunca recebe ações (seção 2.3). */}
-                {u.papel === "DOCENTE" && u.status === "PENDENTE_APROVACAO" && (
-                  <DecisaoDocente
-                    u={u}
-                    aoDecidir={(novo, msg) => {
-                      setDados((l) => (l ?? []).map((x) => (x.id === novo.id ? novo : x)));
-                      setAviso(msg);
-                    }}
-                  />
-                )}
-              </li>
-            ))}
-          </ul>
+                  </td>
+                  <td data-rotulo="Ações" className={celula.acoes}>
+                    {/* O admin fixo nunca recebe ações (seção 2.3). */}
+                    {u.papel === "DOCENTE" && u.status === "PENDENTE_APROVACAO" ? (
+                      <DecisaoDocente
+                        u={u}
+                        aoDecidir={(novo, msg) => {
+                          setDados((l) => (l ?? []).map((x) => (x.id === novo.id ? novo : x)));
+                          setAviso(msg);
+                        }}
+                      />
+                    ) : u.papel === "ADMIN" ? (
+                      <span className={celula.auxiliar}>Conta fixa do sistema</span>
+                    ) : (
+                      <span className={celula.auxiliar}>—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Tabela>
         </>
       )}
     </>

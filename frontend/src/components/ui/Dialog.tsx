@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { Button, type Variante } from "./Button";
+import styles from "./Dialog.module.css";
 
 /**
  * Diálogo modal baseado no <dialog> nativo: showModal() já prende o foco,
@@ -56,21 +57,15 @@ export function Dialog({
   }, [aoFechar]);
 
   return (
-    <dialog
-      ref={ref}
-      aria-labelledby={tituloId}
-      className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-[var(--radius-card)] border border-line bg-surface p-0 text-ink shadow-[var(--shadow-overlay)]"
-    >
+    <dialog ref={ref} aria-labelledby={tituloId} className={styles.dialogo}>
       {aberto && (
-        <div className="space-y-4 p-5 sm:p-6">
-          <h2 id={tituloId} className="text-lg font-bold">
+        <>
+          <h2 id={tituloId} className={styles.titulo}>
             {titulo}
           </h2>
-          <div className="space-y-3 text-ink-muted">{children}</div>
-          {rodape && (
-            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">{rodape}</div>
-          )}
-        </div>
+          <div className={styles.corpo}>{children}</div>
+          {rodape && <div className={styles.rodape}>{rodape}</div>}
+        </>
       )}
     </dialog>
   );
@@ -117,7 +112,7 @@ export function ConfirmDialog({
     >
       {children}
       {erro && (
-        <p role="alert" className="rounded-[var(--radius-control)] border border-danger-200 bg-danger-50 p-3 text-sm font-medium text-danger-600">
+        <p role="alert" className={styles.erro}>
           {erro}
         </p>
       )}

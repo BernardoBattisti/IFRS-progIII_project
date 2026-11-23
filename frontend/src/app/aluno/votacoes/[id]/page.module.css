@@ -1,0 +1,263 @@
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-1) var(--esp-3);
+}
+
+.pilha > * + * {
+  margin-top: var(--esp-4);
+}
+
+.descricao {
+  max-width: 70ch;
+  white-space: pre-line;
+}
+
+.semResultado,
+.nota {
+  padding: var(--esp-2) var(--esp-3);
+  border: 1px solid var(--cinza-400);
+  background: var(--cinza-100);
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}
+
+.nota {
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+.imagem {
+  width: 10rem;
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
+  border: 1px solid var(--cinza-400);
+  background: var(--cinza-200);
+  object-fit: cover;
+}
+
+/* Opções só para consulta */
+.opcoes {
+  border: 1px solid var(--cinza-400);
+}
+
+.opcao {
+  display: flex;
+  gap: var(--esp-3);
+  align-items: flex-start;
+  padding: var(--esp-3);
+}
+
+.opcao + .opcao {
+  border-top: 1px solid var(--cinza-400);
+}
+
+.opcaoTexto {
+  flex: 1;
+  min-width: 0;
+}
+
+.opcaoTitulo {
+  display: block;
+  font-weight: 700;
+}
+
+.opcaoDescricao {
+  display: block;
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}
+
+.bloco {
+  display: block;
+}
+
+.jaVotou {
+  display: block;
+  font-size: var(--texto-p);
+  font-weight: 700;
+  color: var(--verde-700);
+}
+
+.resumo li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  padding: var(--esp-1) 0;
+  border-bottom: 1px solid var(--cinza-200);
+}
+
+.qtd {
+  color: var(--cinza-700);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Saldo de votos */
+.saldo {
+  padding: var(--esp-3);
+  border: 1px solid var(--cinza-400);
+  background: var(--cinza-100);
+}
+
+.cinza {
+  color: var(--cinza-700);
+  font-weight: 400;
+}
+
+.casas {
+  display: flex;
+  gap: 2px;
+  margin-top: var(--esp-2);
+}
+
+.casa {
+  flex: 1;
+  height: 0.75rem;
+  border: 1px solid var(--cinza-600);
+  background: var(--branco);
+}
+
+.usada {
+  background: var(--cinza-700);
+}
+
+.selecionada {
+  background: var(--verde-600);
+  border-color: var(--verde-700);
+}
+
+/* Cédula */
+.cedula > * + * {
+  margin-top: var(--esp-2);
+}
+
+.linhaCedula {
+  align-items: flex-start;
+  padding: var(--esp-3);
+}
+
+.linhaContador {
+  flex-wrap: wrap;
+  cursor: default;
+}
+
+.contador {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  flex-basis: 100%;
+}
+
+.passo {
+  width: var(--alvo);
+  min-height: var(--alvo);
+  padding: 0;
+  font-size: 1.25rem;
+}
+
+.valor {
+  min-width: 5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.valor strong {
+  font-size: 1.125rem;
+}
+
+@media (min-width: 640px) {
+  .linhaContador {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .contador {
+    flex-basis: auto;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 639px) {
+  .linhaCedula {
+    flex-wrap: wrap;
+  }
+
+  .linhaCedula .opcaoTexto {
+    flex: 1 1 0;
+  }
+
+  .imagem {
+    order: 5;
+    width: 100%;
+    max-width: 20rem;
+  }
+
+  .linhaCedula:not(.linhaContador) .imagem {
+    margin-left: calc(1.25rem + var(--esp-3));
+    width: calc(100% - 1.25rem - var(--esp-3));
+  }
+
+  .contador {
+    order: 6;
+  }
+
+  .opcao {
+    flex-wrap: wrap;
+  }
+}
+
+/* Barra de envio: fixa no rodapé no celular */
+.envio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  padding: var(--esp-3);
+  border: 1px solid var(--cinza-600);
+  border-top: 3px solid var(--verde-600);
+  background: var(--cinza-100);
+  font-size: var(--texto-p);
+}
+
+@media (max-width: 639px) {
+  .envio {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin-left: calc(-1 * var(--esp-3) - 1px);
+    margin-right: calc(-1 * var(--esp-3) - 1px);
+  }
+
+  .botaoEnvio {
+    width: 100%;
+  }
+}
+
+.confirmacao {
+  border: 1px solid var(--cinza-400);
+  color: var(--cinza-900);
+  font-size: var(--texto-p);
+}
+
+.confirmacao th,
+.confirmacao td {
+  border: 1px solid var(--cinza-400);
+  padding: var(--esp-1) var(--esp-2);
+}
+
+.confirmacao th {
+  background: var(--cinza-200);
+}
+
+.confirmacao td + td {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.escuro {
+  color: var(--cinza-900);
+}

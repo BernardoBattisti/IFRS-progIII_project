@@ -5,6 +5,7 @@ import { api, mensagemDeErro } from "@/lib/api";
 import type { Usuario } from "@/lib/types";
 import { Button } from "./ui/Button";
 import { ConfirmDialog } from "./ui/Dialog";
+import styles from "./DecisaoDocente.module.css";
 
 /** Botões Aprovar/Rejeitar para um docente PENDENTE_APROVACAO. */
 export function DecisaoDocente({ u, aoDecidir }: { u: Usuario; aoDecidir: (u: Usuario, msg: string) => void }) {
@@ -34,11 +35,11 @@ export function DecisaoDocente({ u, aoDecidir }: { u: Usuario; aoDecidir: (u: Us
   if (u.papel !== "DOCENTE" || u.status !== "PENDENTE_APROVACAO") return null;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className={styles.botoes}>
       <Button tamanho="sm" onClick={() => { setErro(null); setDialogo("aprovar"); }}>
         Aprovar<span className="sr-only"> {u.nome}</span>
       </Button>
-      <Button variante="secondary" tamanho="sm" onClick={() => { setErro(null); setDialogo("rejeitar"); }}>
+      <Button variante="danger-secondary" tamanho="sm" onClick={() => { setErro(null); setDialogo("rejeitar"); }}>
         Rejeitar<span className="sr-only"> {u.nome}</span>
       </Button>
       <ConfirmDialog

@@ -1,5 +1,16 @@
 import type { Metadata, Viewport } from "next";
+import { Source_Serif_4 } from "next/font/google";
 import "./globals.css";
+import styles from "./layout.module.css";
+
+// Serifa só nos títulos; baixada no build e servida pelo próprio app.
+const serifa = Source_Serif_4({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  display: "swap",
+  variable: "--fonte-serifa-carregada",
+  fallback: ["Georgia", "Times New Roman", "serif"],
+});
 
 export const metadata: Metadata = {
   title: { default: "Votações IFRS", template: "%s · Votações IFRS" },
@@ -9,17 +20,14 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#237a32",
+  themeColor: "#1d4f2c",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className="h-full antialiased">
-      <body className="flex min-h-full flex-col">
-        <a
-          href="#conteudo"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:font-semibold focus:text-brand-700 focus:shadow-[var(--shadow-overlay)]"
-        >
+    <html lang="pt-BR" className={serifa.variable}>
+      <body>
+        <a href="#conteudo" className={styles.pular}>
           Pular para o conteúdo
         </a>
         {children}

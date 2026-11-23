@@ -3,6 +3,7 @@ import { Protegido } from "@/components/Sessao";
 import { TelaSimples } from "@/components/TelaSimples";
 import { Alert } from "@/components/ui/Alert";
 import { BotaoVerificar } from "./BotaoVerificar";
+import styles from "@/components/FormPublico.module.css";
 
 export const metadata: Metadata = { title: "Aguardando aprovação" };
 
@@ -16,7 +17,7 @@ export default function Page() {
             votações.
           </p>
         </Alert>
-        <p className="text-ink-muted">Você não precisa fazer mais nada. Volte mais tarde ou verifique agora.</p>
+        <p className={styles.texto}>Você não precisa fazer mais nada. Volte mais tarde ou verifique agora.</p>
         <BotaoVerificar />
       </TelaSimples>
     </Protegido>

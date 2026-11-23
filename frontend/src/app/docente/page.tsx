@@ -10,8 +10,8 @@ import { Carregando } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkBotao } from "@/components/ui/Button";
 import { ErroCarregar } from "@/components/ErroCarregar";
-import { VotacaoItem } from "@/components/VotacaoLista";
-import { cx } from "@/components/ui/cx";
+import { TabelaVotacoes } from "@/components/VotacaoLista";
+import styles from "./page.module.css";
 
 const FILTROS: { valor: EstadoVotacao | "TODAS"; rotulo: string }[] = [
   { valor: "TODAS", rotulo: "Todas" },
@@ -51,7 +51,10 @@ export default function VotacoesDocente() {
       )}
       {dados && dados.length > 0 && (
         <>
-          <div role="group" aria-label="Filtrar por estado" className="mb-4 flex flex-wrap gap-2">
+          <div role="group" aria-label="Filtrar por estado" className={styles.filtros}>
+            <span className={styles.rotuloFiltro} aria-hidden="true">
+              Mostrar:
+            </span>
             {FILTROS.map((f) => {
               const n = f.valor === "TODAS" ? dados.length : dados.filter((v) => v.estado === f.valor).length;
               return (
@@ -60,12 +63,7 @@ export default function VotacoesDocente() {
                   type="button"
                   aria-pressed={filtro === f.valor}
                   onClick={() => setFiltro(f.valor)}
-                  className={cx(
-                    "min-h-11 rounded-full border px-3 text-sm font-semibold sm:min-h-9",
-                    filtro === f.valor
-                      ? "border-brand-600 bg-brand-600 text-white"
-                      : "border-line-strong bg-surface text-ink hover:bg-brand-50",
-                  )}
+                  className={styles.filtro}
                 >
                   {f.rotulo} ({n})
                 </button>
@@ -73,13 +71,18 @@ export default function VotacoesDocente() {
             })}
           </div>
           {lista.length === 0 ? (
-            <p className="text-ink-muted">Nenhuma votação neste estado.</p>
+            <p className={styles.vazio}>Nenhuma votação neste estado.</p>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {lista.map((v) => (
-                <VotacaoItem key={v.id} v={v} href={`/docente/votacoes/${v.id}`} nivel="h2" />
-              ))}
-            </ul>
+            <TabelaVotacoes
+              legenda="Minhas votações"
+              lista={lista}
+              hrefDe={(v) => `/docente/votacoes/${v.id}`}
+              acaoDe={() => ({ rotulo: "Gerenciar" })}
+              extra={{
+                titulo: "Quem vota",
+                valor: (v) => (v.turmas.length === 0 ? "Todos os alunos ativos" : v.turmas.map((t) => t.nome).join(", ")),
+              }}
+            />
           )}
         </>
       )}

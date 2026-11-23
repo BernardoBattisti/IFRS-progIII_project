@@ -1,0 +1,19 @@
+.pilha > * + * {
+  margin-top: var(--esp-4);
+}
+
+.qtd {
+  font-family: var(--fonte-texto);
+  font-weight: 400;
+  font-size: var(--texto-m);
+  color: var(--cinza-700);
+}
+
+.email {
+  overflow-wrap: anywhere;
+}
+
+.codigo {
+  font-weight: 700;
+  color: var(--cinza-900);
+}

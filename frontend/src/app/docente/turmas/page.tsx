@@ -1,7 +1,6 @@
 "use client";
 
 import { useTitulo } from "@/lib/useTitulo";
-import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import type { Turma } from "@/lib/types";
@@ -11,8 +10,10 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Carregando } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErroCarregar } from "@/components/ErroCarregar";
-import { Card } from "@/components/ui/Card";
-import { Button, classeBotao } from "@/components/ui/Button";
+import { Secao } from "@/components/ui/Card";
+import { Tabela, celula } from "@/components/ui/Tabela";
+import styles from "./page.module.css";
+import { Button, LinkBotao } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { TurmaForm } from "@/components/TurmaForm";
 import { CodigoTurma } from "@/components/CodigoTurma";
@@ -43,8 +44,7 @@ export default function TurmasDocente() {
       />
 
       {criando && (
-        <Card className="mb-6">
-          <h2 className="mb-3 text-lg font-bold">Nova turma</h2>
+        <Secao id="titulo-nova" titulo="Nova turma" variante="form" className={styles.bloco}>
           <TurmaForm
             aoSalvar={(t) => {
               setDados((l) => [...(l ?? []), t]);
@@ -53,10 +53,10 @@ export default function TurmasDocente() {
             }}
             aoCancelar={() => setCriando(false)}
           />
-        </Card>
+        </Secao>
       )}
       {criada && (
-        <Alert tom="sucesso" anunciar className="mb-6">
+        <Alert tom="sucesso" anunciar className={styles.bloco}>
           <p>{criada}</p>
         </Alert>
       )}
@@ -69,21 +69,41 @@ export default function TurmasDocente() {
         </EmptyState>
       )}
       {dados && dados.length > 0 && (
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {dados.map((t) => (
-            <li key={t.id} className="space-y-3 rounded-[var(--radius-card)] border border-line bg-surface p-4 shadow-[var(--shadow-card)]">
-              <div>
-                <h2 className="break-words text-lg font-semibold">{t.nome}</h2>
-                <p className="text-sm text-ink-muted">{plural(t.totalAlunos, "aluno", "alunos")}</p>
-                {t.descricao && <p className="mt-1 break-words text-sm">{t.descricao}</p>}
-              </div>
-              {t.codigo && <CodigoTurma codigo={t.codigo} nomeTurma={t.nome} />}
-              <Link href={`/docente/turmas/${t.id}`} className={classeBotao("secondary", "sm")}>
-                Gerenciar<span className="sr-only"> turma {t.nome}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <Tabela legenda="Minhas turmas">
+          <thead>
+            <tr>
+              <th scope="col">Turma</th>
+              <th scope="col" className={celula.numero}>
+                Alunos
+              </th>
+              <th scope="col">Código de entrada</th>
+              <th scope="col">
+                <span className="sr-only">Ação</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {dados.map((t) => (
+              <tr key={t.id}>
+                <td data-rotulo="Turma" className={celula.semRotulo}>
+                  <span className={celula.principal}>{t.nome}</span>
+                  {t.descricao && <span className={styles.descricao}>{t.descricao}</span>}
+                </td>
+                <td data-rotulo="Alunos" className={celula.numero}>
+                  {plural(t.totalAlunos, "aluno", "alunos")}
+                </td>
+                <td data-rotulo="Código de entrada">
+                  {t.codigo ? <CodigoTurma codigo={t.codigo} nomeTurma={t.nome} comRotulo={false} /> : "—"}
+                </td>
+                <td className={`${celula.acoes} ${celula.semRotulo}`}>
+                  <LinkBotao href={`/docente/turmas/${t.id}`} variante="secondary" tamanho="sm">
+                    Gerenciar<span className="sr-only"> turma {t.nome}</span>
+                  </LinkBotao>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Tabela>
       )}
     </>
   );

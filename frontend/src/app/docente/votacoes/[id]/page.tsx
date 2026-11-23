@@ -1,7 +1,6 @@
 "use client";
 
 import { useTitulo } from "@/lib/useTitulo";
-import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { api, ApiError, mensagemDeErro } from "@/lib/api";
@@ -18,6 +17,10 @@ import { ConfirmDialog, Dialog } from "@/components/ui/Dialog";
 import { InputField } from "@/components/ui/Field";
 import { Resultados } from "@/components/Resultados";
 import { RegrasVotacao } from "@/components/RegrasVotacao";
+import { Secao } from "@/components/ui/Card";
+import { Tabela, celula } from "@/components/ui/Tabela";
+import { Trilha } from "@/components/ui/Trilha";
+import styles from "./page.module.css";
 
 export default function Page() {
   return (
@@ -103,11 +106,7 @@ function VotacaoDocente() {
     }
   }
 
-  const voltar = (
-    <Link href="/docente" className="inline-flex min-h-11 items-center font-semibold text-brand-700 hover:underline">
-      <span aria-hidden="true">←&nbsp;</span>Voltar para votações
-    </Link>
-  );
+  const voltar = <Trilha itens={[{ rotulo: "Votações", href: "/docente" }, { rotulo: v?.titulo ?? "Votação" }]} />;
 
   if (!v) {
     return (
@@ -127,7 +126,7 @@ function VotacaoDocente() {
         antes={voltar}
         titulo={v.titulo}
         descricao={
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <div className={styles.meta}>
             <EstadoBadge estado={v.estado} />
             {v.estado === "AGENDADA" && <span>Abre em {formatarDataHora(v.inicio)}</span>}
             {v.estado === "ABERTA" && <span>Encerra em {formatarDataHora(v.fim)}</span>}
@@ -163,7 +162,7 @@ function VotacaoDocente() {
         }
       />
 
-      <div className="space-y-6">
+      <div className={styles.pilha}>
         {aviso && (
           <Alert tom="sucesso" anunciar>
             <p>{aviso}</p>
@@ -180,51 +179,58 @@ function VotacaoDocente() {
           </Alert>
         )}
 
-        {v.descricao && <p className="max-w-prose whitespace-pre-line break-words">{v.descricao}</p>}
+        {v.descricao && <p className={styles.descricao}>{v.descricao}</p>}
 
         <RegrasVotacao v={v} paraDocente />
 
-        <section aria-labelledby="titulo-opcoes" className="space-y-3">
-          <h2 id="titulo-opcoes" className="text-xl font-bold">
-            Opções ({opcoes.length})
-          </h2>
+        <Secao id="titulo-opcoes" titulo={`Opções (${opcoes.length})`}>
           {opcoes.length === 0 ? (
-            <p className="text-ink-muted">Nenhuma opção cadastrada. Edite o rascunho para adicionar pelo menos 2.</p>
+            <p className={styles.vazio}>Nenhuma opção cadastrada. Edite o rascunho para adicionar pelo menos 2.</p>
           ) : (
-            <ol className="grid gap-3 sm:grid-cols-2">
-              {opcoes.map((o, i) => (
-                <li key={o.id} className="flex gap-3 rounded-[var(--radius-card)] border border-line bg-surface p-3">
-                  {o.imagemUrl && (
-                    <img
-                      src={o.imagemUrl}
-                      alt=""
-                      className="size-16 shrink-0 rounded-[var(--radius-control)] border border-line bg-track object-cover"
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <p className="break-words font-semibold">
-                      <span className="text-ink-muted">{i + 1}.</span> {o.titulo || <em className="text-ink-muted">Sem título</em>}
-                    </p>
-                    {o.descricao && <p className="break-words text-sm text-ink-muted">{o.descricao}</p>}
-                  </div>
-                </li>
-              ))}
-            </ol>
+            <Tabela legenda="Opções da votação">
+              <thead>
+                <tr>
+                  <th scope="col" className={`${celula.numero} ${styles.colNumero}`}>
+                    Nº
+                  </th>
+                  <th scope="col">Opção</th>
+                  <th scope="col">Descrição</th>
+                  <th scope="col">Imagem</th>
+                </tr>
+              </thead>
+              <tbody>
+                {opcoes.map((o, i) => (
+                  <tr key={o.id}>
+                    <td data-rotulo="Nº" className={celula.numero}>
+                      {i + 1}
+                    </td>
+                    <td data-rotulo="Opção" className={celula.principal}>
+                      {o.titulo || <em className={styles.vazio}>Sem título</em>}
+                    </td>
+                    <td data-rotulo="Descrição">{o.descricao || "—"}</td>
+                    <td data-rotulo="Imagem">
+                      {o.imagemUrl ? <img src={o.imagemUrl} alt="" className={styles.miniatura} /> : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Tabela>
           )}
-        </section>
+        </Secao>
 
         {v.estado !== "RASCUNHO" && v.podeVerResultado && <Resultados votacao={v} />}
 
         {v.estado === "RASCUNHO" && (
-          <section aria-labelledby="titulo-perigo" className="rounded-[var(--radius-card)] border border-danger-200 bg-surface p-4">
-            <h2 id="titulo-perigo" className="font-bold">
-              Excluir rascunho
-            </h2>
-            <p className="mt-1 text-sm text-ink-muted">Remove o rascunho e todas as opções. Não dá para desfazer.</p>
-            <Button variante="danger" tamanho="sm" className="mt-3" onClick={() => abrir("excluir")}>
+          <Secao
+            id="titulo-perigo"
+            titulo="Excluir rascunho"
+            variante="perigo"
+            descricao="Remove o rascunho e todas as opções. Não dá para desfazer."
+          >
+            <Button variante="danger" tamanho="sm" onClick={() => abrir("excluir")}>
               Excluir rascunho
             </Button>
-          </section>
+          </Secao>
         )}
       </div>
 
@@ -272,7 +278,7 @@ function VotacaoDocente() {
       >
         <p>
           Os alunos não poderão mais votar e o resultado atual passa a ser o final.{" "}
-          <strong className="text-ink">Não dá para reabrir.</strong>
+          <strong className={styles.escuro}>Não dá para reabrir.</strong>
         </p>
       </ConfirmDialog>
 
@@ -317,9 +323,9 @@ function VotacaoDocente() {
           autoFocus
         />
         {erroAcao && (
-          <p role="alert" className="rounded-[var(--radius-control)] border border-danger-200 bg-danger-50 p-3 text-sm font-medium text-danger-600">
-            {erroAcao}
-          </p>
+          <Alert tom="erro" anunciar>
+            <p>{erroAcao}</p>
+          </Alert>
         )}
       </Dialog>
     </>

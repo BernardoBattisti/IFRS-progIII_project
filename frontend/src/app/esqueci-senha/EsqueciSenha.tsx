@@ -7,6 +7,7 @@ import { TelaPublica, classeLinkTexto, focarTituloTela } from "@/components/Tela
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/Field";
+import styles from "@/components/FormPublico.module.css";
 
 export function EsqueciSenha() {
   const [email, setEmail] = useState("");
@@ -60,13 +61,13 @@ export function EsqueciSenha() {
             só pode ser usado uma vez.
           </p>
         </Alert>
-        <p className="text-ink-muted">
+        <p className={styles.texto}>
           Não chegou em alguns minutos? Confira a caixa de spam ou peça um novo link. Cada novo pedido cancela os links
           anteriores.
         </p>
         <Button
           variante="secondary"
-          className="w-full"
+          bloco
           onClick={() => {
             setEnviadoPara(null);
             requestAnimationFrame(() => refEmail.current?.focus());
@@ -84,7 +85,7 @@ export function EsqueciSenha() {
       descricao="Informe o e-mail da sua conta. Vamos enviar um link para você criar uma nova senha."
       rodape={rodape}
     >
-      <form onSubmit={enviar} className="space-y-4" noValidate>
+      <form onSubmit={enviar} className={styles.form} noValidate>
         <InputField
           ref={refEmail}
           rotulo="E-mail"
@@ -103,7 +104,7 @@ export function EsqueciSenha() {
             <p>{erro.texto}</p>
           </Alert>
         )}
-        <Button type="submit" className="w-full" carregando={enviando}>
+        <Button type="submit" bloco carregando={enviando}>
           Enviar link
         </Button>
       </form>

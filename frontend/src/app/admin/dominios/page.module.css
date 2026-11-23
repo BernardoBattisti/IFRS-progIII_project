@@ -1,0 +1,39 @@
+.pilha > * + * {
+  margin-top: var(--esp-4);
+}
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--esp-3);
+}
+
+.campo {
+  flex: 1 1 18rem;
+  max-width: 34rem;
+}
+
+.enviar {
+  margin-top: 1.625rem;
+}
+
+.escuro {
+  color: var(--cinza-900);
+}
+
+.nota {
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}
+
+.dominio {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 639px) {
+  .enviar {
+    margin-top: 0;
+    width: 100%;
+  }
+}

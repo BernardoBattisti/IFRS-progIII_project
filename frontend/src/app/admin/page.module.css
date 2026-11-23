@@ -1,0 +1,7 @@
+.aviso {
+  margin-bottom: var(--esp-4);
+}
+
+.email {
+  overflow-wrap: anywhere;
+}

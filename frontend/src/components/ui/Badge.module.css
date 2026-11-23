@@ -1,0 +1,48 @@
+.rotulo {
+  display: inline-block;
+  padding: 1px var(--esp-2);
+  border: 1px solid;
+  border-radius: var(--raio);
+  font-size: var(--texto-pp);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.neutro {
+  background: var(--cinza-200);
+  border-color: var(--cinza-600);
+  color: var(--cinza-900);
+}
+
+.rascunho {
+  background: var(--branco);
+  border-color: var(--cinza-600);
+  border-style: dashed;
+  color: var(--cinza-700);
+}
+
+.info {
+  background: var(--azul-100);
+  border-color: var(--azul-800);
+  color: var(--azul-800);
+}
+
+.sucesso {
+  background: var(--verde-100);
+  border-color: var(--verde-600);
+  color: var(--verde-700);
+}
+
+.aviso {
+  background: var(--amarelo-100);
+  border-color: var(--amarelo-700);
+  color: var(--amarelo-800);
+}
+
+.erro {
+  background: var(--vermelho-100);
+  border-color: var(--vermelho-700);
+  color: var(--vermelho-700);
+}

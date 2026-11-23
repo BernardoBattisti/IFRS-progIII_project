@@ -1,0 +1,48 @@
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-1);
+  margin-bottom: var(--esp-3);
+  padding: var(--esp-2) var(--esp-3);
+  border: 1px solid var(--cinza-400);
+  background: var(--cinza-100);
+}
+
+.rotuloFiltro {
+  margin-right: var(--esp-2);
+  font-size: var(--texto-p);
+  font-weight: 700;
+}
+
+.filtro {
+  min-height: var(--alvo);
+  padding: 0 var(--esp-3);
+  border: 1px solid var(--cinza-600);
+  border-radius: var(--raio);
+  background: var(--branco);
+  color: var(--verde-600);
+  font-size: var(--texto-p);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filtro:hover {
+  background: var(--verde-100);
+}
+
+.filtro[aria-pressed="true"] {
+  background: var(--verde-600);
+  border-color: var(--verde-700);
+  color: var(--branco);
+}
+
+@media (min-width: 640px) {
+  .filtro {
+    min-height: 2.25rem;
+  }
+}
+
+.vazio {
+  color: var(--cinza-700);
+}

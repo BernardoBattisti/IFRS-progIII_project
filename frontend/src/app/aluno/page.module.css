@@ -1,0 +1,21 @@
+.grupos > * + * {
+  margin-top: var(--esp-5);
+}
+
+.tituloGrupo {
+  margin-bottom: var(--esp-2);
+  padding-bottom: var(--esp-1);
+  border-bottom: 1px solid var(--cinza-400);
+}
+
+.qtd {
+  font-family: var(--fonte-texto);
+  font-weight: 400;
+  font-size: var(--texto-m);
+  color: var(--cinza-700);
+}
+
+.vazio {
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}

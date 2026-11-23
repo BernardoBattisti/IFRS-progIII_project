@@ -2,31 +2,22 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cx } from "./cx";
 import { Spinner } from "./Spinner";
+import styles from "./Button.module.css";
 
-export type Variante = "primary" | "secondary" | "ghost" | "danger";
+export type Variante = "primary" | "secondary" | "ghost" | "danger" | "danger-secondary";
 type Tamanho = "md" | "sm";
 
-const base =
-  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 text-center";
-
 const variantes: Record<Variante, string> = {
-  primary:
-    "bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 border border-brand-600 hover:border-brand-700",
-  secondary:
-    "bg-surface text-brand-700 border border-line-strong hover:bg-brand-50 active:bg-brand-100",
-  ghost: "bg-transparent text-brand-700 border border-transparent hover:bg-brand-50",
-  danger:
-    "bg-danger-600 text-white border border-danger-600 hover:bg-danger-700 hover:border-danger-700",
+  primary: styles.primario,
+  secondary: styles.secundario,
+  ghost: styles.discreto,
+  danger: styles.perigo,
+  "danger-secondary": styles.perigoSecundario,
 };
 
-// Altura mínima de 44px no tamanho padrão (alvo de toque confortável no celular).
-const tamanhos: Record<Tamanho, string> = {
-  md: "min-h-11 px-4 py-2 text-base",
-  sm: "min-h-11 px-3 py-1.5 text-sm sm:min-h-9",
-};
-
-export function classeBotao(variante: Variante = "primary", tamanho: Tamanho = "md") {
-  return cx(base, variantes[variante], tamanhos[tamanho]);
+/** Classe do botão (para links e outros elementos com cara de botão). */
+export function classeBotao(variante: Variante = "primary", tamanho: Tamanho = "md", bloco = false) {
+  return cx(styles.botao, variantes[variante], tamanho === "sm" && styles.pequeno, bloco && styles.bloco);
 }
 
 type BotaoProps = ComponentProps<"button"> & {
@@ -34,6 +25,8 @@ type BotaoProps = ComponentProps<"button"> & {
   tamanho?: Tamanho;
   carregando?: boolean;
   icone?: ReactNode;
+  /** Ocupa a largura toda (no celular e no desktop). */
+  bloco?: boolean;
 };
 
 export function Button({
@@ -41,6 +34,7 @@ export function Button({
   tamanho = "md",
   carregando = false,
   icone,
+  bloco = false,
   className,
   children,
   disabled,
@@ -50,19 +44,19 @@ export function Button({
   return (
     <button
       type={type}
-      className={cx(classeBotao(variante, tamanho), className)}
+      className={cx(classeBotao(variante, tamanho, bloco), className)}
       disabled={disabled || carregando}
       aria-busy={carregando || undefined}
       {...resto}
     >
-      {carregando ? <Spinner className="size-4" /> : icone}
+      {carregando ? <Spinner pequeno /> : icone}
       {children}
     </button>
   );
 }
 
-type LinkBotaoProps = ComponentProps<typeof Link> & { variante?: Variante; tamanho?: Tamanho };
+type LinkBotaoProps = ComponentProps<typeof Link> & { variante?: Variante; tamanho?: Tamanho; bloco?: boolean };
 
-export function LinkBotao({ variante = "primary", tamanho = "md", className, ...resto }: LinkBotaoProps) {
-  return <Link className={cx(classeBotao(variante, tamanho), className)} {...resto} />;
+export function LinkBotao({ variante = "primary", tamanho = "md", bloco = false, className, ...resto }: LinkBotaoProps) {
+  return <Link className={cx(classeBotao(variante, tamanho, bloco), className)} {...resto} />;
 }

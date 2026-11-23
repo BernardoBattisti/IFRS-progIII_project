@@ -6,6 +6,7 @@ import type { Turma } from "@/lib/types";
 import { InputField, TextareaField } from "./ui/Field";
 import { Button } from "./ui/Button";
 import { Alert } from "./ui/Alert";
+import styles from "./TurmaForm.module.css";
 
 export function TurmaForm({
   inicial,
@@ -50,7 +51,7 @@ export function TurmaForm({
   }
 
   return (
-    <form onSubmit={salvar} noValidate className="space-y-3">
+    <form onSubmit={salvar} noValidate className={styles.form}>
       <InputField
         rotulo="Nome da turma"
         value={nome}
@@ -73,7 +74,7 @@ export function TurmaForm({
           <p>{erro}</p>
         </Alert>
       )}
-      <div className="flex flex-wrap gap-2">
+      <div className={styles.botoes}>
         <Button type="submit" carregando={salvando}>
           {inicial ? "Salvar alterações" : "Criar turma"}
         </Button>

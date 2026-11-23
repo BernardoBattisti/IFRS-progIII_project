@@ -1,5 +1,6 @@
 import type { Votacao, Visibilidade } from "@/lib/types";
 import { formatarDataHora } from "@/lib/format";
+import styles from "./RegrasVotacao.module.css";
 
 export const ROTULO_VISIBILIDADE: Record<Visibilidade, string> = {
   SEMPRE: "Durante toda a votação",
@@ -23,13 +24,16 @@ export function RegrasVotacao({ v, paraDocente = false }: { v: Votacao; paraDoce
     ]);
   }
   return (
-    <dl className="grid gap-x-6 gap-y-3 rounded-[var(--radius-card)] border border-line bg-surface p-4 text-sm grid-cols-2">
-      {itens.map(([k, val]) => (
-        <div key={k} className="min-w-0">
-          <dt className="text-ink-muted">{k}</dt>
-          <dd className="break-words font-semibold text-ink">{val}</dd>
-        </div>
-      ))}
-    </dl>
+    <table className={styles.regras}>
+      <caption className="sr-only">Regras da votação</caption>
+      <tbody>
+        {itens.map(([k, val]) => (
+          <tr key={k}>
+            <th scope="row">{k}</th>
+            <td>{val}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

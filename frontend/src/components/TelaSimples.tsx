@@ -1,48 +1,42 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { Marca } from "./AppShell";
+import { useState, type ReactNode } from "react";
 import { useSessao } from "./Sessao";
-import { Button } from "./ui/Button";
-import { Card } from "./ui/Card";
-import { useState } from "react";
+import { BotaoSair, Faixa, Rodape, classesTopo } from "./Topo";
+import styles from "./TelaPublica.module.css";
 
-/** Moldura das telas fora das áreas (cadastro, conta pendente/rejeitada). */
+/** Moldura das telas fora das áreas (conta pendente/rejeitada). */
 export function TelaSimples({ titulo, children }: { titulo: string; children: ReactNode }) {
   const { usuario, sair } = useSessao();
   const [saindo, setSaindo] = useState(false);
   return (
     <>
-      <header className="border-b border-line bg-surface">
-        <div className="h-1 bg-brand-500" aria-hidden="true">
-          <div className="h-full w-16 bg-accent-red" />
-        </div>
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <Marca />
-          <Button
-            variante="secondary"
-            tamanho="sm"
-            carregando={saindo}
-            onClick={async () => {
+      <header>
+        <Faixa>
+          <p>
+            Conectado como <strong>{usuario.email}</strong>
+          </p>
+          <BotaoSair
+            saindo={saindo}
+            aoSair={async () => {
               setSaindo(true);
               await sair();
             }}
-          >
-            Sair
-          </Button>
+          />
+        </Faixa>
+        <div className={classesTopo.barra} aria-hidden="true">
+          <div className={styles.barraVazia} />
         </div>
       </header>
-      <main id="conteudo" tabIndex={-1} className="mx-auto w-full max-w-xl flex-1 px-4 py-8">
-        <Card className="space-y-5">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold">{titulo}</h1>
-            <p className="text-sm text-ink-muted">
-              Conectado como <span className="font-semibold text-ink break-all">{usuario.email}</span>
-            </p>
+      <main id="conteudo" tabIndex={-1} className={classesTopo.conteudo}>
+        <div className={styles.larga}>
+          <div className={styles.cabecalho}>
+            <h1>{titulo}</h1>
           </div>
-          {children}
-        </Card>
+          <div className={styles.caixa}>{children}</div>
+        </div>
       </main>
+      <Rodape />
     </>
   );
 }

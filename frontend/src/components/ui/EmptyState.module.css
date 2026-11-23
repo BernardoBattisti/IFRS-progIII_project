@@ -1,0 +1,21 @@
+.vazio {
+  border: 1px dashed var(--cinza-600);
+  border-radius: var(--raio);
+  background: var(--cinza-100);
+  padding: var(--esp-4);
+}
+
+.titulo {
+  font-weight: 700;
+}
+
+.texto {
+  margin-top: var(--esp-1);
+  max-width: 65ch;
+  color: var(--cinza-700);
+  font-size: var(--texto-p);
+}
+
+.acao {
+  margin-top: var(--esp-3);
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTitulo } from "@/lib/useTitulo";
-import Link from "next/link";
+import { Trilha } from "@/components/ui/Trilha";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import type { Votacao } from "@/lib/types";
@@ -20,12 +20,13 @@ export default function EditarVotacao() {
     <>
       <PageHeader
         antes={
-          <Link
-            href={`/docente/votacoes/${id}`}
-            className="inline-flex min-h-11 items-center font-semibold text-brand-700 hover:underline"
-          >
-            <span aria-hidden="true">←&nbsp;</span>Voltar para a votação
-          </Link>
+          <Trilha
+            itens={[
+              { rotulo: "Votações", href: "/docente" },
+              { rotulo: v?.titulo ?? "Votação", href: `/docente/votacoes/${id}` },
+              { rotulo: "Editar rascunho" },
+            ]}
+          />
         }
         titulo="Editar rascunho"
       />

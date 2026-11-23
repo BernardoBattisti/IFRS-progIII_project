@@ -1,0 +1,21 @@
+/* Formulários das telas públicas e de conta. */
+.form > * + * {
+  margin-top: var(--esp-4);
+}
+
+.grupo > * + * {
+  margin-top: var(--esp-2);
+}
+
+.linkSenha {
+  font-size: var(--texto-p);
+}
+
+.texto {
+  color: var(--cinza-700);
+}
+
+.papeis {
+  display: grid;
+  gap: var(--esp-2);
+}

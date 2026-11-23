@@ -1,0 +1,24 @@
+.regras {
+  border: 1px solid var(--cinza-400);
+  background: var(--branco);
+  font-size: var(--texto-p);
+}
+
+.regras th,
+.regras td {
+  border: 1px solid var(--cinza-400);
+  padding: var(--esp-2) var(--esp-3);
+  vertical-align: top;
+}
+
+.regras th {
+  width: 35%;
+  background: var(--cinza-200);
+  font-weight: 700;
+}
+
+@media (min-width: 900px) {
+  .regras th {
+    width: 14rem;
+  }
+}

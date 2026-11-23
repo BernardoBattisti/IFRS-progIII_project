@@ -8,6 +8,7 @@ import type { Usuario } from "@/lib/types";
 import { Carregando } from "@/components/ui/Spinner";
 import { Alert } from "@/components/ui/Alert";
 import { LinkBotao } from "@/components/ui/Button";
+import styles from "./page.module.css";
 
 // Ponto de entrada: decide a tela a partir de GET /api/auth/me.
 export default function Page() {
@@ -32,9 +33,9 @@ function Inicio() {
   }, [router]);
 
   return (
-    <main id="conteudo" tabIndex={-1} className="mx-auto w-full max-w-lg flex-1 p-4 pt-16">
+    <main id="conteudo" tabIndex={-1} className={styles.inicio}>
       {erro ? (
-        <div className="space-y-4">
+        <div className={styles.pilha}>
           <Alert tom="erro" titulo="Não foi possível carregar sua conta" anunciar>
             <p>{erro}</p>
           </Alert>

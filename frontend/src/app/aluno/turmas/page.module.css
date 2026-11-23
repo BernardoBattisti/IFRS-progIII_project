@@ -1,0 +1,47 @@
+.pilha > * + * {
+  margin-top: var(--esp-5);
+}
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--esp-3);
+}
+
+.campo {
+  flex: 1 1 14rem;
+  max-width: 18rem;
+}
+
+.codigo {
+  font-family: var(--fonte-mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.enviar {
+  margin-top: 1.625rem;
+}
+
+.mensagens:empty {
+  display: none;
+}
+
+.titulo {
+  margin-bottom: var(--esp-2);
+  padding-bottom: var(--esp-1);
+  border-bottom: 1px solid var(--cinza-400);
+}
+
+@media (max-width: 639px) {
+  .campo {
+    max-width: none;
+    flex-basis: 100%;
+  }
+
+  .enviar {
+    margin-top: 0;
+    width: 100%;
+  }
+}

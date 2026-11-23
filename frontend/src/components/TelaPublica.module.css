@@ -1,0 +1,52 @@
+.barraVazia {
+  height: 0.5rem;
+}
+
+.estreita {
+  max-width: 30rem;
+}
+
+.larga {
+  max-width: 36rem;
+}
+
+.cabecalho {
+  padding-bottom: var(--esp-2);
+  margin-bottom: var(--esp-4);
+  border-bottom: 2px solid var(--verde-600);
+}
+
+.descricao {
+  margin-top: var(--esp-1);
+  color: var(--cinza-700);
+}
+
+.caixa {
+  border: 1px solid var(--cinza-400);
+  border-radius: var(--raio);
+  background: var(--cinza-100);
+  padding: var(--esp-4);
+}
+
+.caixa > * + * {
+  margin-top: var(--esp-4);
+}
+
+.rodape {
+  margin-top: var(--esp-3);
+  font-size: var(--texto-p);
+  color: var(--cinza-700);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo);
+  font-weight: 700;
+}
+
+@media (min-width: 640px) {
+  .link {
+    min-height: 0;
+  }
+}

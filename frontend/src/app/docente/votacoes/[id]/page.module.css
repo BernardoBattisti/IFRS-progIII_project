@@ -1,0 +1,35 @@
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-1) var(--esp-3);
+}
+
+.pilha > * + * {
+  margin-top: var(--esp-4);
+}
+
+.descricao {
+  max-width: 70ch;
+  white-space: pre-line;
+}
+
+.vazio {
+  color: var(--cinza-700);
+}
+
+.miniatura {
+  width: 4rem;
+  height: 4rem;
+  border: 1px solid var(--cinza-400);
+  background: var(--cinza-200);
+  object-fit: cover;
+}
+
+.escuro {
+  color: var(--cinza-900);
+}
+
+.colNumero {
+  width: 3.5rem;
+}

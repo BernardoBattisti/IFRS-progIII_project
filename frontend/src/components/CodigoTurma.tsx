@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Button } from "./ui/Button";
+import styles from "./CodigoTurma.module.css";
 
-export function CodigoTurma({ codigo, nomeTurma }: { codigo: string; nomeTurma: string }) {
+export function CodigoTurma({ codigo, nomeTurma, comRotulo = true }: { codigo: string; nomeTurma: string; comRotulo?: boolean }) {
   const [msg, setMsg] = useState<string | null>(null);
   async function copiar() {
     try {
@@ -15,17 +16,17 @@ export function CodigoTurma({ codigo, nomeTurma }: { codigo: string; nomeTurma: 
     setTimeout(() => setMsg(null), 4000);
   }
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm text-ink-muted">Código:</span>
-      <code className="select-all rounded-[var(--radius-control)] border border-line bg-canvas px-2 py-1 font-mono text-lg font-bold tracking-[0.2em] text-ink">
+    <div className={styles.codigo}>
+      {comRotulo && <span className={styles.rotulo}>Código:</span>}
+      <code className={styles.valor}>
         <span aria-hidden="true">{codigo}</span>
         {/* Leitores de tela soletram o código caractere por caractere. */}
         <span className="sr-only">{codigo.split("").join(" ")}</span>
       </code>
-      <Button variante="ghost" tamanho="sm" onClick={copiar}>
+      <Button variante="secondary" tamanho="sm" onClick={copiar}>
         Copiar<span className="sr-only"> código da turma {nomeTurma}</span>
       </Button>
-      <span role="status" className="text-sm text-brand-700">
+      <span role="status" className={styles.msg}>
         {msg}
       </span>
     </div>

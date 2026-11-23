@@ -10,6 +10,7 @@ import { TelaPublica, classeLinkTexto, focarTituloTela } from "@/components/Tela
 import { Alert } from "@/components/ui/Alert";
 import { Button, LinkBotao } from "@/components/ui/Button";
 import { SenhaField } from "@/components/ui/Field";
+import styles from "@/components/FormPublico.module.css";
 
 type Etapa = "formulario" | "sucesso" | "invalido";
 
@@ -59,7 +60,7 @@ export function RedefinirSenha() {
         <Alert tom="sucesso" titulo="Sua nova senha já está valendo" anunciar>
           <p>Entre com seu e-mail e a nova senha.</p>
         </Alert>
-        <LinkBotao href="/login" className="w-full">
+        <LinkBotao href="/login" bloco>
           Ir para o login
         </LinkBotao>
       </TelaPublica>
@@ -75,10 +76,10 @@ export function RedefinirSenha() {
             novo.
           </p>
         </Alert>
-        <LinkBotao href="/esqueci-senha" className="w-full">
+        <LinkBotao href="/esqueci-senha" bloco>
           Pedir um novo link
         </LinkBotao>
-        <p className="text-center text-sm text-ink-muted">
+        <p className={styles.texto}>
           <Link href="/login" className={classeLinkTexto}>
             Voltar para o login
           </Link>
@@ -99,7 +100,7 @@ export function RedefinirSenha() {
         </p>
       }
     >
-      <form onSubmit={enviar} className="space-y-4" noValidate>
+      <form onSubmit={enviar} className={styles.form} noValidate>
         <SenhaField
           id="nova-senha"
           rotulo="Nova senha"
@@ -126,7 +127,7 @@ export function RedefinirSenha() {
             <p>{erro.texto}</p>
           </Alert>
         )}
-        <Button type="submit" className="w-full" carregando={enviando}>
+        <Button type="submit" bloco carregando={enviando}>
           Salvar nova senha
         </Button>
       </form>
